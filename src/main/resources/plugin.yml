@@ -1,0 +1,4 @@
+name: TreasureHunt
+version: '${version}'
+main: plugin.treasurehunt.TreasureHunt
+api-version: '1.20'
