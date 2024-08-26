@@ -9,7 +9,8 @@ public final class TreasureHunt extends JavaPlugin implements Listener {
 
   @Override
   public void onEnable() {
-    Bukkit.getPluginManager().registerEvents(this, this);
-    getCommand("findGoldenApple").setExecutor(new FindGoldenAppleCommand());
+    FindGoldenAppleCommand findGoldenAppleCommand = new FindGoldenAppleCommand();
+    Bukkit.getPluginManager().registerEvents(findGoldenAppleCommand, this);
+    getCommand("findGoldenApple").setExecutor(findGoldenAppleCommand);
   }
 }

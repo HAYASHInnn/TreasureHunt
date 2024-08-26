@@ -7,21 +7,37 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.inventory.ItemStack;
 
-public class FindGoldenAppleCommand implements CommandExecutor {
+public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
   @Override
   public boolean onCommand(CommandSender commandSender, Command command, String s,
       String[] strings) {
     if (commandSender instanceof Player player) {
-      Block block = getDecoratedPotLocation(player).getBlock();
-      block.setType(Material.DECORATED_POT);
+      Block treasurePot = getDecoratedPotLocation(player).getBlock();
+      treasurePot.setType(Material.DECORATED_POT);
     }
     return false;
   }
 
+
+  @EventHandler
+  public void onBlockBreak(BlockBreakEvent b) {
+    Block block = b.getBlock();
+    Player breaker = b.getPlayer();
+
+    if (block.getType() == Material.DECORATED_POT) {
+      block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
+    }
+  }
+
+
   /**
-   * 飾り壺の出現を取得します。 出現エリアのX軸は3。 Y軸はプレイヤーと同じ位置になります。
+   * 飾り壺の出現場所を取得します。 出現エリアのX軸は...Y軸はプレイヤーと同じ位置になります。
    *
    * @param player 　コマンドを実行したプレイヤー
    * @return　飾り壺の出現場所
