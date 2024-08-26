@@ -32,6 +32,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
     if (block.getType() == Material.DECORATED_POT) {
       block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
+      b.setDropItems(false);
     }
   }
 
