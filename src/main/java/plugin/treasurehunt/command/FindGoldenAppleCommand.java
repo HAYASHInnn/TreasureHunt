@@ -21,6 +21,8 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
   public boolean onCommand(CommandSender commandSender, Command command, String s,
       String[] strings) {
     if (commandSender instanceof Player player) {
+      player.sendTitle("START", "りんごを探せ！", 0, 30, 0);
+
       Block treasurePot = getDecoratedPotLocation(player).getBlock();
       treasurePot.setType(Material.DECORATED_POT);
     }
