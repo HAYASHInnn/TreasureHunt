@@ -6,10 +6,13 @@ import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class FindGoldenAppleCommand implements CommandExecutor, Listener {
@@ -33,6 +36,19 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
     if (block.getType() == Material.DECORATED_POT) {
       block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
       b.setDropItems(false);
+    }
+  }
+
+  @EventHandler
+  public void onEntityPickupItem(EntityPickupItemEvent itemEvent) {
+    Entity entity = itemEvent.getEntity();
+
+    if (entity instanceof Player player) {
+      Item item = itemEvent.getItem();
+
+      if (item.getItemStack().getType() == Material.APPLE) {
+        player.sendMessage("おめでとう！りんごを獲得しました");
+      }
     }
   }
 
