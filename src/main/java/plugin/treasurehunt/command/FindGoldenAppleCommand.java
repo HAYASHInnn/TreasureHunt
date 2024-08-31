@@ -6,7 +6,6 @@ import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -17,10 +16,15 @@ import org.bukkit.inventory.ItemStack;
 
 public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
+  private Player player;
+  private int score;
+
   @Override
   public boolean onCommand(CommandSender commandSender, Command command, String s,
       String[] strings) {
     if (commandSender instanceof Player player) {
+      this.player = player;
+
       player.sendTitle("START", "りんごを探せ！", 0, 30, 0);
 
       Block treasurePot = getDecoratedPotLocation(player).getBlock();
@@ -29,11 +33,10 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
     return false;
   }
 
-
+  // 飾り壺を壊すとりんごがドロップする。デフォルトでドロップするアイテムはドロップしないようにする。
   @EventHandler
   public void onBlockBreak(BlockBreakEvent b) {
     Block block = b.getBlock();
-    Player breaker = b.getPlayer();
 
     if (block.getType() == Material.DECORATED_POT) {
       block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
@@ -43,14 +46,10 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
   @EventHandler
   public void onEntityPickupItem(EntityPickupItemEvent itemEvent) {
-    Entity entity = itemEvent.getEntity();
+    Item item = itemEvent.getItem();
 
-    if (entity instanceof Player player) {
-      Item item = itemEvent.getItem();
-
-      if (item.getItemStack().getType() == Material.APPLE) {
-        player.sendMessage("おめでとう！りんごを獲得しました");
-      }
+    if (item.getItemStack().getType() == Material.APPLE) {
+      player.sendMessage("おめでとう！りんごを獲得しました");
     }
   }
 
