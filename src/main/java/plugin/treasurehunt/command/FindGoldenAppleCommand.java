@@ -78,7 +78,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
           .equals(entity.getName())) {
         playerData.setScore(playerData.getScore() + 10);
         entity.sendMessage(
-            "おめでとう！りんごを獲得しました(TOTAL:" + playerData.getScore() + "点)");
+            "おめでとう！りんごを獲得しました(TOTAL：" + playerData.getScore() + "点)");
       }
     }
   }
