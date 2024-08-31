@@ -1,11 +1,14 @@
 package plugin.treasurehunt.command;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,17 +16,27 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.inventory.ItemStack;
+import plugin.treasurehunt.data.PlayerData;
 
 public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
-  private Player player;
-  private int score;
+  private List<PlayerData> playerDataList = new ArrayList<>();
+
 
   @Override
   public boolean onCommand(CommandSender commandSender, Command command, String s,
       String[] strings) {
+
     if (commandSender instanceof Player player) {
-      this.player = player;
+      if (playerDataList.isEmpty()) {
+        addNewPlayer(player);
+      } else {
+        for (PlayerData playerData : playerDataList) {
+          if (!playerData.getPlayerName().equals(player.getName())) {
+            addNewPlayer(player);
+          }
+        }
+      }
 
       player.sendTitle("START", "りんごを探せ！", 0, 30, 0);
 
@@ -32,6 +45,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
     }
     return false;
   }
+
 
   /**
    * 飾り壺を壊すとりんごがドロップする。デフォルトでドロップするアイテムはドロップしないようにする。
@@ -49,12 +63,23 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
     }
   }
 
+
   @EventHandler
   public void onEntityPickupItem(EntityPickupItemEvent itemEvent) {
+    Entity entity = itemEvent.getEntity();
     Item item = itemEvent.getItem();
 
-    if (item.getItemStack().getType() == Material.APPLE) {
-      player.sendMessage("おめでとう！りんごを獲得しました");
+    if (playerDataList.isEmpty()) {
+      return;
+    }
+
+    for (PlayerData playerData : playerDataList) {
+      if (item.getItemStack().getType() == Material.APPLE && playerData.getPlayerName()
+          .equals(entity.getName())) {
+        playerData.setScore(playerData.getScore() + 10);
+        entity.sendMessage(
+            "おめでとう！りんごを獲得しました(TOTAL:" + playerData.getScore() + "点)");
+      }
     }
   }
 
@@ -73,5 +98,17 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
     double z = playerlocation.getZ();
 
     return new Location(player.getWorld(), x, y, z);
+  }
+
+
+  /**
+   * 新規のプレイヤー情報をリストに追加する
+   *
+   * @param player 　コマンドを実行したプレイヤー
+   */
+  private void addNewPlayer(Player player) {
+    PlayerData newplayerData = new PlayerData();
+    newplayerData.setPlayerName(player.getName());
+    playerDataList.add(newplayerData);
   }
 }

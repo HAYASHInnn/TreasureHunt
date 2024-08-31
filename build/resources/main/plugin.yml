@@ -1,0 +1,6 @@
+name: TreasureHunt
+version: '1.0-SNAPSHOT'
+main: plugin.treasurehunt.TreasureHunt
+api-version: '1.20'
+commands:
+  findGoldenApple:
