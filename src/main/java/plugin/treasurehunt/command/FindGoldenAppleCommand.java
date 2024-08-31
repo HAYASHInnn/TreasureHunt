@@ -33,14 +33,19 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
     return false;
   }
 
-  // 飾り壺を壊すとりんごがドロップする。デフォルトでドロップするアイテムはドロップしないようにする。
+  /**
+   * 飾り壺を壊すとりんごがドロップする。デフォルトでドロップするアイテムはドロップしないようにする。
+   *
+   * @param breakEvent 飾り壺を壊したときのイベント
+   * @return　飾り壺のドロップアイテム
+   */
   @EventHandler
-  public void onBlockBreak(BlockBreakEvent b) {
-    Block block = b.getBlock();
+  public void onBlockBreak(BlockBreakEvent breakEvent) {
+    Block block = breakEvent.getBlock();
 
     if (block.getType() == Material.DECORATED_POT) {
       block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
-      b.setDropItems(false);
+      breakEvent.setDropItems(false);
     }
   }
 
