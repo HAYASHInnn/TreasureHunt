@@ -41,6 +41,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
           if (!playerData.getPlayerName().equals(player.getName())) {
             addNewPlayer(player);
           }
+          playerData.setScore(0);
         }
       }
 
