@@ -1,7 +1,10 @@
 package plugin.treasurehunt.command;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.SplittableRandom;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -20,7 +23,10 @@ import plugin.treasurehunt.data.PlayerData;
 
 public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
+  public static final int POT_AMOUNT = 3;
+
   private List<PlayerData> playerDataList = new ArrayList<>();
+  private final Map<Location, Integer> potIDMap = new HashMap<>();
 
 
   @Override
@@ -40,8 +46,14 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
       player.sendTitle("START", "りんごを探せ！", 0, 30, 0);
 
-      Block treasurePot = getDecoratedPotLocation(player).getBlock();
-      treasurePot.setType(Material.DECORATED_POT);
+      int id = new SplittableRandom().nextInt(POT_AMOUNT);
+      potIDMap.put(getDecoratedPotLocation(player), id);
+
+      int potAmount = POT_AMOUNT;
+      for (int i = 1; i <= potAmount; i++) {
+        Block treasurePot = getDecoratedPotLocation(player).getBlock();
+        treasurePot.setType(Material.DECORATED_POT);
+      }
     }
     return false;
   }
@@ -54,7 +66,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
    * @return　飾り壺のドロップアイテム
    */
   @EventHandler
-  public void onBlockBreak(BlockBreakEvent breakEvent) {
+  public void onPotBreak(BlockBreakEvent breakEvent) {
     Block block = breakEvent.getBlock();
 
     if (block.getType() == Material.DECORATED_POT) {
@@ -92,10 +104,11 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
    */
   private Location getDecoratedPotLocation(Player player) {
     Location playerlocation = player.getLocation();
+    int randomZ = new SplittableRandom().nextInt(10) - 5;
 
     double x = playerlocation.getX() + 3;
     double y = playerlocation.getY();
-    double z = playerlocation.getZ();
+    double z = playerlocation.getZ() + randomZ;
 
     return new Location(player.getWorld(), x, y, z);
   }
