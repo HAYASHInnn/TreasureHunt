@@ -47,11 +47,8 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
       player.sendTitle("START", "りんごを探せ！", 0, 30, 0);
 
-      int id = new SplittableRandom().nextInt(POT_AMOUNT);
-      potIDMap.put(getDecoratedPotLocation(player), id);
-
-      int potAmount = POT_AMOUNT;
-      for (int i = 1; i <= potAmount; i++) {
+      for (int id = 1; id <= POT_AMOUNT; id++) {
+        potIDMap.put(getDecoratedPotLocation(player), id);
         Block treasurePot = getDecoratedPotLocation(player).getBlock();
         treasurePot.setType(Material.DECORATED_POT);
       }
