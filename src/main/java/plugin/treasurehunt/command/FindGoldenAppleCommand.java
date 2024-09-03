@@ -42,6 +42,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
             addNewPlayer(player);
           }
           playerData.setScore(0);
+          potIDMap.clear();
         }
       }
 
