@@ -100,10 +100,10 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
             .dropItemNaturally(block.getLocation(), new ItemStack(Material.GOLDEN_APPLE));
         case APPLE ->
             block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
+        default -> breakEvent.setDropItems(false);
       }
 
       potIDMap.remove(block);
-      breakEvent.setDropItems(false);
     }
   }
 
