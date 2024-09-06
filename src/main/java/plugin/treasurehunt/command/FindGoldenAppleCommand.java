@@ -24,9 +24,15 @@ import plugin.treasurehunt.data.PlayerData;
 public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
   public static final int POT_AMOUNT = 3;
+  public static final int APPLE_AMOUNT = 1;
 
-  private List<PlayerData> playerDataList = new ArrayList<>();
-  private final Map<Location, Integer> potIDMap = new HashMap<>();
+  public static final String GOLDEN_APPLE = "golden_apple";
+  public static final String APPLE = "apple";
+  public static final String NONE = "none";
+
+
+  private final List<PlayerData> playerDataList = new ArrayList<>();
+  private final Map<Block, String> potIDMap = new HashMap<>();
 
 
   @Override
@@ -48,13 +54,31 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
       player.sendTitle("START", "りんごを探せ！", 0, 30, 0);
 
-      for (int id = 1; id <= POT_AMOUNT; id++) {
-        potIDMap.put(getDecoratedPotLocation(player), id);
-        Block treasurePot = getDecoratedPotLocation(player).getBlock();
-        treasurePot.setType(Material.DECORATED_POT);
+      for (int i = 1; i <= POT_AMOUNT; i++) {
+        Block block = getDecoratedPotLocation(player).getBlock();
+        block.setType(Material.DECORATED_POT);
+
+        String dropType = idItemDrop(i);
+        potIDMap.put(block, dropType);
       }
     }
     return false;
+  }
+
+  /**
+   * IDに基づいて、金のりんご、りんご、ドロップなしを決定する。
+   *
+   * @param id 出現した飾り壺のID
+   * @return ドロップアイテムの種類
+   */
+  private String idItemDrop(int id) {
+    if (id == 1) {
+      return GOLDEN_APPLE;
+    } else if (id >= 2 && id <= 2 + APPLE_AMOUNT - 1) {
+      return APPLE;
+    } else {
+      return NONE;
+    }
   }
 
 
@@ -69,7 +93,16 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
     Block block = breakEvent.getBlock();
 
     if (block.getType() == Material.DECORATED_POT) {
-      block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
+      String dropItem = potIDMap.get(block);
+
+      switch (dropItem) {
+        case GOLDEN_APPLE -> block.getWorld()
+            .dropItemNaturally(block.getLocation(), new ItemStack(Material.GOLDEN_APPLE));
+        case APPLE ->
+            block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
+      }
+
+      potIDMap.remove(block);
       breakEvent.setDropItems(false);
     }
   }
