@@ -20,7 +20,7 @@ import plugin.treasurehunt.data.PlayerData;
 
 public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
-  public static final int POT_AMOUNT = 4;
+  public static final int POT_AMOUNT = 5;
   public static final int APPLE_AMOUNT = 2;
 
   public static final String GOLDEN_APPLE = "golden_apple";
@@ -54,15 +54,25 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
       player.sendTitle("START", "金のりんごを探せ！", 0, 30, 0);
 
-      for (int i = 1; i <= POT_AMOUNT; i++) {
-        Block block = getDecoratedPotLocation(player).getBlock();
-        block.setType(Material.DECORATED_POT);
-
-        String dropType = idItemDrop(i);
-        potIDMap.put(block, dropType);
-      }
+      spawnedPotRegistry(player);
     }
     return false;
+  }
+
+
+  /**
+   * 飾り壺を出現させ、出現した飾り壺をドロップアイテムの種類と併せてMap登録する。
+   *
+   * @param player コマンドを実行したプレイヤー
+   */
+  private void spawnedPotRegistry(Player player) {
+    for (int i = 1; i <= POT_AMOUNT; i++) {
+      Block block = getDecoratedPotLocation(player).getBlock();
+      block.setType(Material.DECORATED_POT);
+
+      String itemDrop = idItemDrop(i);
+      potIDMap.put(block, itemDrop);
+    }
   }
 
   /**
@@ -83,10 +93,10 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
 
   /**
-   * 飾り壺を壊すとりんごがドロップする。デフォルトでドロップするアイテムはドロップしないようにする。
+   * 飾り壺を壊すとMapに登録されている情報をに基づいて、アイテムがドロップする。 デフォルトのドロップアイテムはドロップしないようにする。ドロップアイテムに応じてスコアを加算する
    *
    * @param breakEvent 飾り壺を壊したときのイベント
-   * @return　飾り壺のドロップアイテム
+   * @return 飾り壺のドロップアイテム
    */
   @EventHandler
   public void onPotBreak(BlockBreakEvent breakEvent) {
@@ -96,13 +106,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
     if (block.getType() == Material.DECORATED_POT) {
       String dropItem = potIDMap.get(block);
 
-      switch (dropItem) {
-        case GOLDEN_APPLE -> block.getWorld()
-            .dropItemNaturally(block.getLocation(), new ItemStack(Material.GOLDEN_APPLE));
-        case APPLE -> block.getWorld()
-            .dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
-        case NONE -> breakEvent.setDropItems(false);
-      }
+      handleBlockDrop(breakEvent, dropItem, block);
 
       if (playerDataList.isEmpty()) {
         return;
@@ -116,16 +120,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
           }
         }
 
-        switch (dropItem) {
-          case GOLDEN_APPLE -> player.sendMessage(
-              "金のりんごを見つけた！SCORE：" + BONUS_SCORE + "　TOTAL：" + playerData.getScore()
-                  + "　LEFT：　");
-          case APPLE -> player.sendMessage(
-              "りんごを見つけた！SCORE：" + APPLE_SCORE + "　TOTAL：" + playerData.getScore()
-                  + "　LEFT：　");
-          default -> player.sendMessage(
-              "ざんねん！はずれ！SCORE：0　TOTAL：" + playerData.getScore() + "　LEFT：　");
-        }
+        messageOnFound(playerData, dropItem, player);
 
         breakEvent.setDropItems(false);
         potIDMap.remove(block);
@@ -135,10 +130,55 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
 
   /**
-   * 飾り壺の出現場所を取得します。 出現エリアのX軸は...Y軸はプレイヤーと同じ位置になります。
+   * 飾り壺が壊されたときに、指定されたアイテムをドロップ。またはドロップを無効化します。
    *
-   * @param player 　コマンドを実行したプレイヤー
-   * @return　飾り壺の出現場所
+   * @param breakEvent 飾り壺を壊したときのイベント
+   * @param dropItem   飾り壺を壊した後のドロップアイテム
+   * @param block      ゲーム開始時に出現した飾り壺
+   */
+  private static void handleBlockDrop(BlockBreakEvent breakEvent, String dropItem, Block block) {
+    switch (dropItem) {
+      case GOLDEN_APPLE -> block.getWorld()
+          .dropItemNaturally(block.getLocation(), new ItemStack(Material.GOLDEN_APPLE));
+      case APPLE -> block.getWorld()
+          .dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
+      case NONE -> breakEvent.setDropItems(false);
+    }
+  }
+
+
+  /**
+   * 飾り壺を壊してドロップアイテムが判明後、プレイヤーに獲得スコア、現在のトータルスコア、残りんご数の情報を送る
+   *
+   * @param playerData プレイヤー情報リスト
+   * @param dropItem   飾り壺を壊した後のドロップアイテム
+   * @param player     コマンドを実行したプレイヤー
+   */
+  private void messageOnFound(PlayerData playerData, String dropItem, Player player) {
+    switch (dropItem) {
+      case GOLDEN_APPLE -> player.sendMessage(
+          "金のりんごを見つけた！SCORE："
+              + BONUS_SCORE
+              + "　TOTAL：" + playerData.getScore()
+              + "　LEFT：　");
+      case APPLE -> player.sendMessage(
+          "りんごを見つけた！SCORE："
+              + APPLE_SCORE
+              + "　TOTAL：" + playerData.getScore()
+              + "　LEFT：　");
+      default -> player.sendMessage(
+          "ざんねん！はずれ！SCORE：0　TOTAL："
+              + playerData.getScore()
+              + "　LEFT：　");
+    }
+  }
+
+
+  /**
+   * 飾り壺の出現場所を取得します。 出現エリアのX軸とZ軸は自分の位置からプラスランダムで-5〜4の値が設定されます。 Y軸はプレイヤーと同じ位置になります。
+   *
+   * @param player コマンドを実行したプレイヤー
+   * @return　　 　 飾り壺の出現場所
    */
   private Location getDecoratedPotLocation(Player player) {
     Location playerlocation = player.getLocation();
@@ -156,7 +196,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
   /**
    * 新規のプレイヤー情報をリストに追加する
    *
-   * @param player 　コマンドを実行したプレイヤー
+   * @param player コマンドを実行したプレイヤー
    */
   private void addNewPlayer(Player player) {
     PlayerData newplayerData = new PlayerData();
