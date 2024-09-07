@@ -11,24 +11,24 @@ import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.inventory.ItemStack;
 import plugin.treasurehunt.data.PlayerData;
 
 public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
-  public static final int POT_AMOUNT = 3;
-  public static final int APPLE_AMOUNT = 1;
+  public static final int POT_AMOUNT = 4;
+  public static final int APPLE_AMOUNT = 2;
 
   public static final String GOLDEN_APPLE = "golden_apple";
   public static final String APPLE = "apple";
   public static final String NONE = "none";
+
+  public static final int APPLE_SCORE = 10;
+  public static final int BONUS_SCORE = 50;
 
 
   private final List<PlayerData> playerDataList = new ArrayList<>();
@@ -52,7 +52,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
         }
       }
 
-      player.sendTitle("START", "りんごを探せ！", 0, 30, 0);
+      player.sendTitle("START", "金のりんごを探せ！", 0, 30, 0);
 
       for (int i = 1; i <= POT_AMOUNT; i++) {
         Block block = getDecoratedPotLocation(player).getBlock();
@@ -91,6 +91,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
   @EventHandler
   public void onPotBreak(BlockBreakEvent breakEvent) {
     Block block = breakEvent.getBlock();
+    Player player = breakEvent.getPlayer();
 
     if (block.getType() == Material.DECORATED_POT) {
       String dropItem = potIDMap.get(block);
@@ -98,31 +99,33 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
       switch (dropItem) {
         case GOLDEN_APPLE -> block.getWorld()
             .dropItemNaturally(block.getLocation(), new ItemStack(Material.GOLDEN_APPLE));
-        case APPLE ->
-            block.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
-        default -> breakEvent.setDropItems(false);
+        case APPLE -> block.getWorld()
+            .dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
+        case NONE -> breakEvent.setDropItems(false);
       }
 
-      potIDMap.remove(block);
-    }
-  }
+      if (playerDataList.isEmpty()) {
+        return;
+      }
+      for (PlayerData playerData : playerDataList) {
+        if (playerData.getPlayerName().equals(player.getName())) {
+          switch (dropItem) {
+            case GOLDEN_APPLE -> playerData.setScore(playerData.getScore() + BONUS_SCORE);
+            case APPLE -> playerData.setScore(playerData.getScore() + APPLE_SCORE);
+            default -> playerData.setScore(playerData.getScore());
+          }
+        }
 
+        switch (dropItem) {
+          case GOLDEN_APPLE ->
+              player.sendTitle("金のりんごを見つけた！", "SCORE：　TOTAL SCORE：　LEFT：　", 0, 30, 0);
+          case APPLE ->
+              player.sendTitle("りんごを見つけた！", "SCORE：　TOTAL SCORE：　LEFT：　", 0, 30, 0);
+          default -> player.sendTitle("ざんねん！ハズレ", "SCORE：0　TOTAL SCORE：　LEFT：　", 0, 30, 0);
+        }
 
-  @EventHandler
-  public void onEntityPickupItem(EntityPickupItemEvent itemEvent) {
-    Entity entity = itemEvent.getEntity();
-    Item item = itemEvent.getItem();
-
-    if (playerDataList.isEmpty()) {
-      return;
-    }
-
-    for (PlayerData playerData : playerDataList) {
-      if (item.getItemStack().getType() == Material.APPLE && playerData.getPlayerName()
-          .equals(entity.getName())) {
-        playerData.setScore(playerData.getScore() + 10);
-        entity.sendMessage(
-            "おめでとう！りんごを獲得しました(TOTAL：" + playerData.getScore() + "点)");
+        breakEvent.setDropItems(false);
+        potIDMap.remove(block);
       }
     }
   }
@@ -136,9 +139,10 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
    */
   private Location getDecoratedPotLocation(Player player) {
     Location playerlocation = player.getLocation();
+    int randomX = new SplittableRandom().nextInt(10) - 5;
     int randomZ = new SplittableRandom().nextInt(10) - 5;
 
-    double x = playerlocation.getX() + 3;
+    double x = playerlocation.getX() + randomX;
     double y = playerlocation.getY();
     double z = playerlocation.getZ() + randomZ;
 
