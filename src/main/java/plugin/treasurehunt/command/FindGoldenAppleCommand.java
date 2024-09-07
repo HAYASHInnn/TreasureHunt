@@ -117,11 +117,14 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
         }
 
         switch (dropItem) {
-          case GOLDEN_APPLE ->
-              player.sendTitle("金のりんごを見つけた！", "SCORE：　TOTAL SCORE：　LEFT：　", 0, 30, 0);
-          case APPLE ->
-              player.sendTitle("りんごを見つけた！", "SCORE：　TOTAL SCORE：　LEFT：　", 0, 30, 0);
-          default -> player.sendTitle("ざんねん！ハズレ", "SCORE：0　TOTAL SCORE：　LEFT：　", 0, 30, 0);
+          case GOLDEN_APPLE -> player.sendMessage(
+              "金のりんごを見つけた！SCORE：" + BONUS_SCORE + "　TOTAL：" + playerData.getScore()
+                  + "　LEFT：　");
+          case APPLE -> player.sendMessage(
+              "りんごを見つけた！SCORE：" + APPLE_SCORE + "　TOTAL：" + playerData.getScore()
+                  + "　LEFT：　");
+          default -> player.sendMessage(
+              "ざんねん！はずれ！SCORE：0　TOTAL：" + playerData.getScore() + "　LEFT：　");
         }
 
         breakEvent.setDropItems(false);
