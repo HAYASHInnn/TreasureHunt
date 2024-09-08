@@ -52,7 +52,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
         }
       }
 
-      player.sendTitle("START", "金のりんごを探せ！", 0, 30, 0);
+      player.sendTitle("START", "金のりんごを探せ！", 0, 30, 10);
 
       spawnedPotRegistry(player);
     }
@@ -123,13 +123,16 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
         potIDMap.remove(block);
 
-        int count = 0;
-        for (Map.Entry<Block, String> entry : potIDMap.entrySet()) {
-          if (entry.getValue().equals(GOLDEN_APPLE) || entry.getValue().equals(APPLE)) {
-            count++;
-          }
+        int count = (int) potIDMap.entrySet().stream()
+            .filter(
+                entry -> entry.getValue().equals(GOLDEN_APPLE) || entry.getValue().equals(APPLE))
+            .count();
+
+        if (count != 0) {
+          player.sendTitle("", "りんごは残り" + count + "個", 0, 30, 10);
+        } else {
+          player.sendTitle("FINISH", "", 0, 30, 10);
         }
-        player.sendTitle("", "りんごは残り" + count + "個", 0, 30, 10);
 
         messageOnFound(playerData, dropItem, player);
 
