@@ -107,6 +107,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
       String dropItem = potIDMap.get(block);
 
       handleBlockDrop(breakEvent, dropItem, block);
+      breakEvent.setDropItems(false);
 
       if (playerDataList.isEmpty()) {
         return;
@@ -120,10 +121,18 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
           }
         }
 
+        potIDMap.remove(block);
+
+        int count = 0;
+        for (Map.Entry<Block, String> entry : potIDMap.entrySet()) {
+          if (entry.getValue().equals(GOLDEN_APPLE) || entry.getValue().equals(APPLE)) {
+            count++;
+          }
+        }
+        player.sendTitle("", "りんごは残り" + count + "個", 0, 30, 10);
+
         messageOnFound(playerData, dropItem, player);
 
-        breakEvent.setDropItems(false);
-        potIDMap.remove(block);
       }
     }
   }
@@ -159,17 +168,13 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
       case GOLDEN_APPLE -> player.sendMessage(
           "金のりんごを見つけた！SCORE："
               + BONUS_SCORE
-              + "　TOTAL：" + playerData.getScore()
-              + "　LEFT：　");
+              + "　TOTAL：" + playerData.getScore());
       case APPLE -> player.sendMessage(
           "りんごを見つけた！SCORE："
               + APPLE_SCORE
-              + "　TOTAL：" + playerData.getScore()
-              + "　LEFT：　");
+              + "　TOTAL：" + playerData.getScore());
       default -> player.sendMessage(
-          "ざんねん！はずれ！SCORE：0　TOTAL："
-              + playerData.getScore()
-              + "　LEFT：　");
+          "ざんねん！はずれ！");
     }
   }
 
