@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SplittableRandom;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -16,9 +17,12 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
+import plugin.treasurehunt.TreasureHunt;
 import plugin.treasurehunt.data.PlayerData;
 
 public class FindGoldenAppleCommand implements CommandExecutor, Listener {
+
+  public int GAME_TIME = 20;
 
   public static final int POT_AMOUNT = 5;
   public static final int APPLE_AMOUNT = 2;
@@ -31,8 +35,14 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
   public static final int BONUS_SCORE = 50;
 
 
+  private final TreasureHunt treasurehunt;
+
   private final List<PlayerData> playerDataList = new ArrayList<>();
   private final Map<Block, String> potIDMap = new HashMap<>();
+
+  public FindGoldenAppleCommand(TreasureHunt treasurehunt) {
+    this.treasurehunt = treasurehunt;
+  }
 
 
   @Override
@@ -48,13 +58,23 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
             addNewPlayer(player);
           }
           playerData.setScore(0);
-          potIDMap.clear();
         }
       }
 
+      GAME_TIME = 30;
+      potIDMap.clear();
       player.sendTitle("START", "金のりんごを探せ！", 0, 30, 10);
 
-      spawnedPotRegistry(player);
+      Bukkit.getScheduler().runTaskTimer(treasurehunt, Runnable -> {
+        if (GAME_TIME <= 0) {
+          Runnable.cancel();
+          player.sendTitle("FINISH", "TOTAL SCORE：", 0, 60, 10);
+          return;
+        }
+        spawnedPotRegistry(player);
+        GAME_TIME -= 20;
+      }, 0, 20 * 20);
+
     }
     return false;
   }
@@ -131,7 +151,7 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
         if (count != 0) {
           player.sendTitle("", "りんごは残り" + count + "個", 0, 30, 10);
         } else {
-          player.sendTitle("FINISH", "", 0, 30, 10);
+          player.sendTitle("FINISH", "TOTAL SCORE：" + playerData.getScore(), 0, 60, 10);
         }
 
         messageOnFound(playerData, dropItem, player);
@@ -169,13 +189,9 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
   private void messageOnFound(PlayerData playerData, String dropItem, Player player) {
     switch (dropItem) {
       case GOLDEN_APPLE -> player.sendMessage(
-          "金のりんごを見つけた！SCORE："
-              + BONUS_SCORE
-              + "　TOTAL：" + playerData.getScore());
+          "金のりんごを見つけた！SCORE：" + BONUS_SCORE);
       case APPLE -> player.sendMessage(
-          "りんごを見つけた！SCORE："
-              + APPLE_SCORE
-              + "　TOTAL：" + playerData.getScore());
+          "りんごを見つけた！SCORE：" + APPLE_SCORE);
       default -> player.sendMessage(
           "ざんねん！はずれ！");
     }
