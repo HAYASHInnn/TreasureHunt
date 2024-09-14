@@ -22,7 +22,7 @@ import plugin.treasurehunt.data.PlayerData;
 
 public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
-  public int GAME_TIME = 20;
+  public static int GAME_TIME = 20;
 
   public static final int POT_AMOUNT = 5;
   public static final int APPLE_AMOUNT = 2;
@@ -64,19 +64,44 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
       GAME_TIME = 30;
       potIDMap.clear();
       player.sendTitle("START", "金のりんごを探せ！", 0, 30, 10);
+      spawnedPotRegistry(player);
 
       Bukkit.getScheduler().runTaskTimer(treasurehunt, Runnable -> {
         if (GAME_TIME <= 0) {
           Runnable.cancel();
-          player.sendTitle("FINISH", "TOTAL SCORE：", 0, 60, 10);
+
+          for (PlayerData playerData : playerDataList) {
+            if (playerData.getPlayerName().equals(player.getName())) {
+              finishGame(playerData, player);
+            }
+          }
           return;
         }
-        spawnedPotRegistry(player);
-        GAME_TIME -= 20;
-      }, 0, 20 * 20);
+        GAME_TIME -= 1;
+      }, 0, 1 * 20);
 
     }
     return false;
+  }
+
+  /**
+   * ゲーム終了処理。FINISHメッセージを表示し、スコアを表示。
+   *
+   * @param playerData
+   * @param player
+   */
+  private void finishGame(PlayerData playerData, Player player) {
+    // プレイヤーにメッセージを送る
+    player.sendTitle("FINISH", "TOTAL SCORE：" + playerData.getScore(), 0, 60, 10);
+
+    // 壊れていない飾り壺を消す
+    for (Map.Entry<Block, String> entry : potIDMap.entrySet()) {
+      if (entry.getValue() == NONE || entry.getValue() == GOLDEN_APPLE
+          || entry.getValue() == APPLE) {
+        Block key = entry.getKey();
+        key.setType(Material.AIR);
+      }
+    }
   }
 
 
@@ -143,20 +168,30 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
         potIDMap.remove(block);
 
-        int count = (int) potIDMap.entrySet().stream()
-            .filter(
-                entry -> entry.getValue().equals(GOLDEN_APPLE) || entry.getValue().equals(APPLE))
-            .count();
-
-        if (count != 0) {
-          player.sendTitle("", "りんごは残り" + count + "個", 0, 30, 10);
-        } else {
-          player.sendTitle("FINISH", "TOTAL SCORE：" + playerData.getScore(), 0, 60, 10);
-        }
+        appleCountLeft(playerData, player);
 
         messageOnFound(playerData, dropItem, player);
 
       }
+    }
+  }
+
+  /**
+   * 獲得できるりんごが残り何個あるかをカウントする
+   *
+   * @param playerData
+   * @param player
+   */
+  private void appleCountLeft(PlayerData playerData, Player player) {
+    int count = (int) potIDMap.entrySet().stream()
+        .filter(
+            entry -> entry.getValue().equals(GOLDEN_APPLE) || entry.getValue().equals(APPLE))
+        .count();
+
+    if (count == 0) {
+      GAME_TIME = 0;
+    } else {
+      player.sendTitle("", "りんごは残り" + count + "個", 0, 30, 10);
     }
   }
 
