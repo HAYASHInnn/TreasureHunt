@@ -10,7 +10,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -20,16 +19,16 @@ import org.bukkit.inventory.ItemStack;
 import plugin.treasurehunt.TreasureHunt;
 import plugin.treasurehunt.data.PlayerData;
 
-public class FindGoldenAppleCommand implements CommandExecutor, Listener {
+public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
-  public static int GAME_TIME = 20;
+  public static int GAME_TIME = 20 * 20;
 
   public static final int POT_AMOUNT = 5;
   public static final int APPLE_AMOUNT = 2;
 
-  public static final String GOLDEN_APPLE = "golden_apple";
-  public static final String APPLE = "apple";
-  public static final String NONE = "none";
+  public static final String GOLDEN_APPLE_ITEM_DROP = "golden_apple";
+  public static final String APPLE_ITEM_DROP = "apple";
+  public static final String NONE_ITEM_DROP = "none";
 
   public static final int APPLE_SCORE = 10;
   public static final int BONUS_SCORE = 50;
@@ -40,49 +39,54 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
   private final List<PlayerData> playerDataList = new ArrayList<>();
   private final Map<Block, String> potIDMap = new HashMap<>();
 
+
   public FindGoldenAppleCommand(TreasureHunt treasurehunt) {
     this.treasurehunt = treasurehunt;
   }
 
+  @Override
+  public boolean onExecutePlayerCommand(Player player, Command command, String label,
+      String[] args) {
+
+    if (playerDataList.isEmpty()) {
+      addNewPlayer(player);
+    } else {
+      for (PlayerData playerData : playerDataList) {
+        if (!playerData.getPlayerName().equals(player.getName())) {
+          addNewPlayer(player);
+        }
+        playerData.setScore(0);
+      }
+    }
+
+    GAME_TIME = 20 * 20;
+    potIDMap.clear();
+    player.sendTitle("START", "金のりんごを探せ！", 0, 30, 10);
+    spawnedPotRegistry(player);
+
+    Bukkit.getScheduler().runTaskTimer(treasurehunt, Runnable -> {
+      if (GAME_TIME <= 0) {
+        Runnable.cancel();
+
+        for (PlayerData playerData : playerDataList) {
+          if (playerData.getPlayerName().equals(player.getName())) {
+            finishGame(playerData, player);
+          }
+        }
+        return;
+      }
+      GAME_TIME -= 1;
+    }, 0, 1);
+
+    return true;
+  }
 
   @Override
-  public boolean onCommand(CommandSender commandSender, Command command, String s,
-      String[] strings) {
-
-    if (commandSender instanceof Player player) {
-      if (playerDataList.isEmpty()) {
-        addNewPlayer(player);
-      } else {
-        for (PlayerData playerData : playerDataList) {
-          if (!playerData.getPlayerName().equals(player.getName())) {
-            addNewPlayer(player);
-          }
-          playerData.setScore(0);
-        }
-      }
-
-      GAME_TIME = 30;
-      potIDMap.clear();
-      player.sendTitle("START", "金のりんごを探せ！", 0, 30, 10);
-      spawnedPotRegistry(player);
-
-      Bukkit.getScheduler().runTaskTimer(treasurehunt, Runnable -> {
-        if (GAME_TIME <= 0) {
-          Runnable.cancel();
-
-          for (PlayerData playerData : playerDataList) {
-            if (playerData.getPlayerName().equals(player.getName())) {
-              finishGame(playerData, player);
-            }
-          }
-          return;
-        }
-        GAME_TIME -= 1;
-      }, 0, 1 * 20);
-
-    }
+  public boolean onExecuteNPCCommand(CommandSender sender, Command command, String label,
+      String[] args) {
     return false;
   }
+
 
   /**
    * ゲーム終了処理。FINISHメッセージを表示し、スコアを表示。
@@ -96,8 +100,8 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
 
     // 壊れていない飾り壺を消す
     for (Map.Entry<Block, String> entry : potIDMap.entrySet()) {
-      if (entry.getValue() == NONE || entry.getValue() == GOLDEN_APPLE
-          || entry.getValue() == APPLE) {
+      if (entry.getValue() == NONE_ITEM_DROP || entry.getValue() == GOLDEN_APPLE_ITEM_DROP
+          || entry.getValue() == APPLE_ITEM_DROP) {
         Block key = entry.getKey();
         key.setType(Material.AIR);
       }
@@ -128,11 +132,11 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
    */
   private String idItemDrop(int id) {
     if (id == 1) {
-      return GOLDEN_APPLE;
+      return GOLDEN_APPLE_ITEM_DROP;
     } else if (id >= 2 && id <= 2 + APPLE_AMOUNT - 1) {
-      return APPLE;
+      return APPLE_ITEM_DROP;
     } else {
-      return NONE;
+      return NONE_ITEM_DROP;
     }
   }
 
@@ -160,8 +164,8 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
       for (PlayerData playerData : playerDataList) {
         if (playerData.getPlayerName().equals(player.getName())) {
           switch (dropItem) {
-            case GOLDEN_APPLE -> playerData.setScore(playerData.getScore() + BONUS_SCORE);
-            case APPLE -> playerData.setScore(playerData.getScore() + APPLE_SCORE);
+            case GOLDEN_APPLE_ITEM_DROP -> playerData.setScore(playerData.getScore() + BONUS_SCORE);
+            case APPLE_ITEM_DROP -> playerData.setScore(playerData.getScore() + APPLE_SCORE);
             default -> playerData.setScore(playerData.getScore());
           }
         }
@@ -185,7 +189,8 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
   private void appleCountLeft(PlayerData playerData, Player player) {
     int count = (int) potIDMap.entrySet().stream()
         .filter(
-            entry -> entry.getValue().equals(GOLDEN_APPLE) || entry.getValue().equals(APPLE))
+            entry -> entry.getValue().equals(GOLDEN_APPLE_ITEM_DROP) || entry.getValue().equals(
+                APPLE_ITEM_DROP))
         .count();
 
     if (count == 0) {
@@ -205,11 +210,11 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
    */
   private static void handleBlockDrop(BlockBreakEvent breakEvent, String dropItem, Block block) {
     switch (dropItem) {
-      case GOLDEN_APPLE -> block.getWorld()
+      case GOLDEN_APPLE_ITEM_DROP -> block.getWorld()
           .dropItemNaturally(block.getLocation(), new ItemStack(Material.GOLDEN_APPLE));
-      case APPLE -> block.getWorld()
+      case APPLE_ITEM_DROP -> block.getWorld()
           .dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
-      case NONE -> breakEvent.setDropItems(false);
+      case NONE_ITEM_DROP -> breakEvent.setDropItems(false);
     }
   }
 
@@ -223,9 +228,9 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
    */
   private void messageOnFound(PlayerData playerData, String dropItem, Player player) {
     switch (dropItem) {
-      case GOLDEN_APPLE -> player.sendMessage(
+      case GOLDEN_APPLE_ITEM_DROP -> player.sendMessage(
           "金のりんごを見つけた！SCORE：" + BONUS_SCORE);
-      case APPLE -> player.sendMessage(
+      case APPLE_ITEM_DROP -> player.sendMessage(
           "りんごを見つけた！SCORE：" + APPLE_SCORE);
       default -> player.sendMessage(
           "ざんねん！はずれ！");
@@ -263,3 +268,5 @@ public class FindGoldenAppleCommand implements CommandExecutor, Listener {
     playerDataList.add(newplayerData);
   }
 }
+
+
