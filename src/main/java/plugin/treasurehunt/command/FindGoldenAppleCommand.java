@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.SplittableRandom;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -145,6 +146,10 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
     Block block = breakEvent.getBlock();
     Player player = breakEvent.getPlayer();
+
+    if (Objects.isNull(player) || playerScoreList.isEmpty()) {
+      return;
+    }
 
     if (block.getType() == Material.DECORATED_POT) {
       String dropItem = potIDMap.get(block);
