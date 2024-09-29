@@ -27,6 +27,11 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   public static final int POT_AMOUNT = 5;
   public static final int APPLE_AMOUNT = 2;
 
+  // GAME_TIMEはチック数（20チック／秒）
+  public static final int GAME_TIME = 20 * 20;
+
+  public static int COUNTDOWN = 6;
+
   public static final String GOLDEN_APPLE_ITEM_DROP = "golden_apple";
   public static final String APPLE_ITEM_DROP = "apple";
   public static final String NONE_ITEM_DROP = "none";
@@ -50,11 +55,11 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       String[] args) {
 
     PlayerScore nowPlayer = getPlayerScore(player);
-    nowPlayer.setGameTime(20 * 20);
+    nowPlayer.setGameTime(GAME_TIME);
     nowPlayer.setScore(0);
 
     potIDMap.clear();
-    player.sendTitle("START", "金のりんごを探せ！", 0, 30, 10);
+    player.sendTitle("START", "飾り壺を割って金のりんごを探せ！", 0, 30, 10);
     spawnedPotRegistry(player);
 
     Bukkit.getScheduler().runTaskTimer(treasurehunt, Runnable -> {
@@ -157,9 +162,6 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       handleBlockDrop(breakEvent, dropItem, block);
       breakEvent.setDropItems(false);
 
-      if (playerScoreList.isEmpty()) {
-        return;
-      }
       for (PlayerScore playerScore : playerScoreList) {
         if (playerScore.getPlayerName().equals(player.getName())) {
           switch (dropItem) {
