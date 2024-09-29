@@ -11,6 +11,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -27,8 +30,8 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   public static final int POT_AMOUNT = 5;
   public static final int APPLE_AMOUNT = 2;
 
-  // GAME_TIMEはチック数（20チック／秒）
-  public static final int GAME_TIME = 20 * 20;
+  // GAME_TIMEの単位は秒
+  public static final int GAME_TIME = 20;
 
   public static int COUNTDOWN = 6;
 
@@ -38,6 +41,8 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
   public static final int APPLE_SCORE = 10;
   public static final int BONUS_SCORE = 50;
+
+  private BossBar bossBar;
 
 
   private final TreasureHunt treasurehunt;
@@ -58,6 +63,11 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     nowPlayer.setGameTime(GAME_TIME);
     nowPlayer.setScore(0);
 
+    // ボスバーを作成し、残り時間を表示
+    bossBar = Bukkit.createBossBar("残り時間: " + GAME_TIME + "秒", BarColor.BLUE, BarStyle.SOLID);
+    bossBar.setProgress(1.0); // ボスバーの進行度を100%に設定
+    bossBar.addPlayer(player); // プレイヤーにボスバーを表示
+
     potIDMap.clear();
     player.sendTitle("START", "飾り壺を割って金のりんごを探せ！", 0, 30, 10);
     spawnedPotRegistry(player);
@@ -68,13 +78,17 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
         for (PlayerScore playerScore : playerScoreList) {
           if (playerScore.getPlayerName().equals(player.getName())) {
+            bossBar.removeAll();
             finishGame(playerScore, player);
           }
         }
         return;
       }
+      bossBar.setTitle("残り時間: " + nowPlayer.getGameTime() + "秒");
+      bossBar.setProgress((double) nowPlayer.getGameTime() / GAME_TIME);
+
       nowPlayer.setGameTime(nowPlayer.getGameTime() - 1);
-    }, 0, 1);
+    }, 0, 1 * 20);
 
     return true;
   }
