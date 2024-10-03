@@ -31,7 +31,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   public static final int APPLE_AMOUNT = 2;
 
   // GAME_TIMEの単位は秒
-  public static final int GAME_TIME = 20;
+  public static final int GAME_TIME = 40;
 
   public static int COUNTDOWN = 6;
 
@@ -39,7 +39,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   public static final String APPLE_ITEM_DROP = "apple";
   public static final String NONE_ITEM_DROP = "none";
 
-  public static final int APPLE_SCORE = 10;
+  // 金のりんごを発見したときのボーナススコアq
   public static final int BONUS_SCORE = 50;
 
   private BossBar bossBar;
@@ -66,7 +66,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     // ボスバーを作成し、残り時間を表示
     bossBar = Bukkit.createBossBar("残り時間: " + GAME_TIME + "秒", BarColor.BLUE, BarStyle.SOLID);
     bossBar.setProgress(1.0); // ボスバーの進行度を100%に設定
-    bossBar.addPlayer(player); // プレイヤーにボスバーを表示
+    bossBar.addPlayer(player);
 
     potIDMap.clear();
     player.sendTitle("START", "飾り壺を割って金のりんごを探せ！", 0, 30, 10);
@@ -138,7 +138,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   }
 
   /**
-   * IDに基づいて、金のりんご、りんご、ドロップなしを決定する。
+   * IDに基づいて、金のりんご、りんご、ドロップなしを決定する。金のりんごは1個。りんごは2個。IDが振り分けられる。
    *
    * @param id 出現した飾り壺のID
    * @return ドロップアイテムの種類
@@ -176,23 +176,28 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       handleBlockDrop(breakEvent, dropItem, block);
       breakEvent.setDropItems(false);
 
-      for (PlayerScore playerScore : playerScoreList) {
-        if (playerScore.getPlayerName().equals(player.getName())) {
-          switch (dropItem) {
-            case GOLDEN_APPLE_ITEM_DROP ->
-                playerScore.setScore(playerScore.getScore() + BONUS_SCORE);
-            case APPLE_ITEM_DROP -> playerScore.setScore(playerScore.getScore() + APPLE_SCORE);
-            default -> playerScore.setScore(playerScore.getScore());
-          }
+      playerScoreList.forEach(playerScore -> {
+        if (playerScore.getPlayerName().equals(player.getName())
+            && dropItem.equals(NONE_ITEM_DROP)) {
+          messageOnFound(playerScore, dropItem, player);
+          return;
         }
-
+        if (playerScore.getPlayerName().equals(player.getName())
+            && dropItem.equals(GOLDEN_APPLE_ITEM_DROP)) {
+          playerScore.setScore(playerScore.getScore() + BONUS_SCORE);
+        }
+        int remainingTime = playerScore.getGameTime();
+        if (remainingTime > 30) {
+          playerScore.setScore(playerScore.getScore() + 100);
+        } else if (remainingTime > 20) {
+          playerScore.setScore(playerScore.getScore() + 50);
+        } else if (remainingTime > 0) {
+          playerScore.setScore(playerScore.getScore() + 10);
+        }
         potIDMap.remove(block);
-
         appleCountLeft(player);
-
         messageOnFound(playerScore, dropItem, player);
-
-      }
+      });
     }
   }
 
@@ -246,9 +251,9 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   private void messageOnFound(PlayerScore playerScore, String dropItem, Player player) {
     switch (dropItem) {
       case GOLDEN_APPLE_ITEM_DROP -> player.sendMessage(
-          "金のりんごを見つけた！SCORE：" + BONUS_SCORE);
+          "金のりんごを見つけた！SCORE：" + playerScore.getScore());
       case APPLE_ITEM_DROP -> player.sendMessage(
-          "りんごを見つけた！SCORE：" + APPLE_SCORE);
+          "りんごを見つけた！SCORE：" + playerScore.getScore());
       default -> player.sendMessage(
           "ざんねん！はずれ！");
     }
