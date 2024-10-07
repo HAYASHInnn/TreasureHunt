@@ -39,7 +39,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   public static final String APPLE_ITEM_DROP = "apple";
   public static final String NONE_ITEM_DROP = "none";
 
-  // 金のりんごを発見したときのボーナススコアq
+  // 金のりんごを発見したときのボーナススコア
   public static final int BONUS_SCORE = 50;
 
   private BossBar bossBar;
@@ -158,7 +158,6 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * 飾り壺を壊すとMapに登録されている情報をに基づいて、アイテムがドロップする。 デフォルトのドロップアイテムはドロップしないようにする。ドロップアイテムに応じてスコアを加算する
    *
    * @param breakEvent 飾り壺を壊したときのイベント
-   * @return 飾り壺のドロップアイテム
    */
   @EventHandler
   public void onPotBreak(BlockBreakEvent breakEvent) {
@@ -174,35 +173,62 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       String dropItem = potIDMap.get(block);
 
       handleBlockDrop(breakEvent, dropItem, block);
+
+      // デフォルトのドロップアイテムを無効にする
       breakEvent.setDropItems(false);
 
       playerScoreList.forEach(playerScore -> {
-        if (playerScore.getPlayerName().equals(player.getName())
-            && dropItem.equals(NONE_ITEM_DROP)) {
-          messageOnFound(playerScore, dropItem, player);
-          return;
+        if (playerScore.getPlayerName().equals(player.getName())) {
+          Integer addScore = getAddScore(playerScore, dropItem, player);
+          if (addScore == null) {
+            return;  // スコア加算しない
+          }
+
+          // ポットを削除し、残りのりんごの数を更新
+          potIDMap.remove(block);
+          appleCountLeft(player);
+
+          messageOnFound(dropItem, player, addScore);
         }
-        if (playerScore.getPlayerName().equals(player.getName())
-            && dropItem.equals(GOLDEN_APPLE_ITEM_DROP)) {
-          playerScore.setScore(playerScore.getScore() + BONUS_SCORE);
-        }
-        int remainingTime = playerScore.getGameTime();
-        if (remainingTime > 30) {
-          playerScore.setScore(playerScore.getScore() + 100);
-        } else if (remainingTime > 20) {
-          playerScore.setScore(playerScore.getScore() + 50);
-        } else if (remainingTime > 0) {
-          playerScore.setScore(playerScore.getScore() + 10);
-        }
-        potIDMap.remove(block);
-        appleCountLeft(player);
-        messageOnFound(playerScore, dropItem, player);
       });
     }
   }
 
+
   /**
-   * 獲得できるりんごが残り何個あるかをカウントする
+   * 指定されたアイテムのドロップと残り時間に基づいて、プレイヤーに追加されるスコアを計算する。
+   *
+   * @param playerScore 　プレイヤー情報
+   * @param dropItem    　ドロップアイテムの種類
+   * @param player      　コマンドを実行したプレイヤー
+   * @return　　　　　　　　追加されるスコア
+   */
+  private Integer getAddScore(PlayerScore playerScore, String dropItem, Player player) {
+    int addScore = 0;
+
+    if (dropItem.equals(NONE_ITEM_DROP)) {
+      messageOnFound(dropItem, player, addScore);
+      return null;
+    }
+    if (dropItem.equals(GOLDEN_APPLE_ITEM_DROP)) {
+      addScore += BONUS_SCORE;
+    }
+    int remainingTime = playerScore.getGameTime();
+
+    if (remainingTime > 30) {
+      addScore += 100;
+    } else if (remainingTime > 20) {
+      addScore += 50;
+    } else if (remainingTime > 0) {
+      addScore += 10;
+    }
+    playerScore.setScore(playerScore.getScore() + addScore);
+    return addScore;
+  }
+
+
+  /**
+   * 獲得できるりんごが残り何個あるかをカウントする。りんごが0個になった場合、ゲームを終了する
    *
    * @param player コマンドを実行したプレイヤー
    */
@@ -218,6 +244,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     if (count == 0) {
       nowPlayer.setGameTime(0);
     } else {
+
       player.sendTitle("", "りんごは残り" + count + "個", 0, 30, 10);
     }
   }
@@ -242,18 +269,18 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
 
   /**
-   * 飾り壺を壊してドロップアイテムが判明後、プレイヤーに獲得スコア、現在のトータルスコア、残りんご数の情報を送る
+   * 飾り壺を壊してドロップアイテムが判明後、ドロップアイテムの結果とプレイヤーに追加されたスコアを送る
    *
-   * @param playerScore プレイヤー情報リスト
-   * @param dropItem    飾り壺を壊した後のドロップアイテム
-   * @param player      コマンドを実行したプレイヤー
+   * @param dropItem 飾り壺を壊した後のドロップアイテム
+   * @param player   コマンドを実行したプレイヤー
+   * @param addScore 　追加されたスコア
    */
-  private void messageOnFound(PlayerScore playerScore, String dropItem, Player player) {
+  private void messageOnFound(String dropItem, Player player, int addScore) {
     switch (dropItem) {
       case GOLDEN_APPLE_ITEM_DROP -> player.sendMessage(
-          "金のりんごを見つけた！SCORE：" + playerScore.getScore());
+          "金のりんごを見つけた！（＋" + addScore + "点）");
       case APPLE_ITEM_DROP -> player.sendMessage(
-          "りんごを見つけた！SCORE：" + playerScore.getScore());
+          "りんごを見つけた！（＋" + addScore + "点）");
       default -> player.sendMessage(
           "ざんねん！はずれ！");
     }
