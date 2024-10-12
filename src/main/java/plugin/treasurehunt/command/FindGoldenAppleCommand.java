@@ -96,24 +96,35 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       bossBar.setTitle("残り時間: " + nowPlayer.getGameTime() + "秒");
       bossBar.setProgress((double) nowPlayer.getGameTime() / GAME_TIME);
 
-      // スコアボードの導入
-      scoreboardManager = Bukkit.getScoreboardManager();
-      scoreboard = scoreboardManager.getNewScoreboard();
-
-      objective = scoreboard.registerNewObjective("GameStats",
-          "dummy",
-          "TOTAL SCORE");
-      objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-
-      player.setScoreboard(scoreboard);
-
-      Score score = objective.getScore("");
-      score.setScore(nowPlayer.getScore());
+      displayTotalScoreOnBoard(player, nowPlayer);
 
       nowPlayer.setGameTime(nowPlayer.getGameTime() - 1);
     }, 0, 1 * 20);
 
     return true;
+  }
+
+
+  /**
+   * ゲーム中に現在のトータルスコアをスコアボードに表示する
+   *
+   * @param player    　コマンドを実行したプレイヤー
+   * @param nowPlayer 　コマンドを実行したプレイヤー
+   */
+  private void displayTotalScoreOnBoard(Player player, PlayerData nowPlayer) {
+    scoreboardManager = Bukkit.getScoreboardManager();
+    scoreboard = scoreboardManager.getNewScoreboard();
+
+    objective = scoreboard.registerNewObjective(
+        "GameStats",
+        "dummy",
+        "TOTAL SCORE");
+    objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+
+    player.setScoreboard(scoreboard);
+
+    Score score = objective.getScore("");
+    score.setScore(nowPlayer.getScore());
   }
 
 
@@ -128,7 +139,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * ゲーム終了処理。FINISHメッセージを表示し、スコアを表示。
    *
    * @param playerData
-   * @param player
+   * @param player     　コマンドを実行したプレイヤー
    */
   private void finishGame(PlayerData playerData, Player player) {
     player.sendTitle("FINISH", "TOTAL SCORE：" + playerData.getScore(), 0, 60, 10);
