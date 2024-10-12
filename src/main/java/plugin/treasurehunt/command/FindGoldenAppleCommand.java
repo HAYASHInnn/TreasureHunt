@@ -21,8 +21,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Score;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
 import plugin.treasurehunt.TreasureHunt;
-import plugin.treasurehunt.data.PlayerScore;
+import plugin.treasurehunt.data.PlayerData;
 
 public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
@@ -44,10 +49,14 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
   private BossBar bossBar;
 
+  private ScoreboardManager scoreboardManager;
+  private Scoreboard scoreboard;
+  private Objective objective;
+
 
   private final TreasureHunt treasurehunt;
 
-  private final List<PlayerScore> playerScoreList = new ArrayList<>();
+  private final List<PlayerData> playerDataList = new ArrayList<>();
   private final Map<Block, String> potIDMap = new HashMap<>();
 
 
@@ -59,7 +68,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   public boolean onExecutePlayerCommand(Player player, Command command, String label,
       String[] args) {
 
-    PlayerScore nowPlayer = getPlayerScore(player);
+    PlayerData nowPlayer = getPlayerData(player);
     nowPlayer.setGameTime(GAME_TIME);
     nowPlayer.setScore(0);
 
@@ -76,16 +85,30 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       if (nowPlayer.getGameTime() <= 0) {
         Runnable.cancel();
 
-        for (PlayerScore playerScore : playerScoreList) {
-          if (playerScore.getPlayerName().equals(player.getName())) {
+        for (PlayerData playerData : playerDataList) {
+          if (playerData.getPlayerName().equals(player.getName())) {
             bossBar.removeAll();
-            finishGame(playerScore, player);
+            finishGame(playerData, player);
           }
         }
         return;
       }
       bossBar.setTitle("残り時間: " + nowPlayer.getGameTime() + "秒");
       bossBar.setProgress((double) nowPlayer.getGameTime() / GAME_TIME);
+
+      // スコアボードの導入
+      scoreboardManager = Bukkit.getScoreboardManager();
+      scoreboard = scoreboardManager.getNewScoreboard();
+
+      objective = scoreboard.registerNewObjective("GameStats",
+          "dummy",
+          "TOTAL SCORE");
+      objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+
+      player.setScoreboard(scoreboard);
+
+      Score score = objective.getScore("");
+      score.setScore(nowPlayer.getScore());
 
       nowPlayer.setGameTime(nowPlayer.getGameTime() - 1);
     }, 0, 1 * 20);
@@ -104,13 +127,14 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   /**
    * ゲーム終了処理。FINISHメッセージを表示し、スコアを表示。
    *
-   * @param playerScore
+   * @param playerData
    * @param player
    */
-  private void finishGame(PlayerScore playerScore, Player player) {
+  private void finishGame(PlayerData playerData, Player player) {
+    player.sendTitle("FINISH", "TOTAL SCORE：" + playerData.getScore(), 0, 60, 10);
 
-    // プレイヤーにメッセージを送る
-    player.sendTitle("FINISH", "TOTAL SCORE：" + playerScore.getScore(), 0, 60, 10);
+    // 空のスコアボードを設定して、ゲーム中のスコアボードを非表示にする
+    player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
 
     // 壊れていない飾り壺を消す
     potIDMap.entrySet().stream().filter(
@@ -165,7 +189,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     Block block = breakEvent.getBlock();
     Player player = breakEvent.getPlayer();
 
-    if (Objects.isNull(player) || playerScoreList.isEmpty()) {
+    if (Objects.isNull(player) || playerDataList.isEmpty()) {
       return;
     }
 
@@ -177,16 +201,16 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       // デフォルトのドロップアイテムを無効にする
       breakEvent.setDropItems(false);
 
-      playerScoreList.forEach(playerScore -> {
-        if (playerScore.getPlayerName().equals(player.getName())) {
-          Integer addScore = getAddScore(playerScore, dropItem, player);
+      playerDataList.forEach(playerData -> {
+        if (playerData.getPlayerName().equals(player.getName())) {
+          Integer addScore = getAddScore(playerData, dropItem, player);
           if (addScore == null) {
-            return;  // スコア加算しない
+            return;
           }
 
           // ポットを削除し、残りのりんごの数を更新
           potIDMap.remove(block);
-          appleCountLeft(player);
+          finishGameIfApplesGone(player);
 
           messageOnFound(dropItem, player, addScore);
         }
@@ -198,12 +222,12 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   /**
    * 指定されたアイテムのドロップと残り時間に基づいて、プレイヤーに追加されるスコアを計算する。
    *
-   * @param playerScore 　プレイヤー情報
-   * @param dropItem    　ドロップアイテムの種類
-   * @param player      　コマンドを実行したプレイヤー
+   * @param playerData 　プレイヤー情報
+   * @param dropItem   　ドロップアイテムの種類
+   * @param player     　コマンドを実行したプレイヤー
    * @return　　　　　　　　追加されるスコア
    */
-  private Integer getAddScore(PlayerScore playerScore, String dropItem, Player player) {
+  private Integer getAddScore(PlayerData playerData, String dropItem, Player player) {
     int addScore = 0;
 
     if (dropItem.equals(NONE_ITEM_DROP)) {
@@ -213,7 +237,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     if (dropItem.equals(GOLDEN_APPLE_ITEM_DROP)) {
       addScore += BONUS_SCORE;
     }
-    int remainingTime = playerScore.getGameTime();
+    int remainingTime = playerData.getGameTime();
 
     if (remainingTime > 30) {
       addScore += 100;
@@ -222,31 +246,38 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     } else if (remainingTime > 0) {
       addScore += 10;
     }
-    playerScore.setScore(playerScore.getScore() + addScore);
+    playerData.setScore(playerData.getScore() + addScore);
     return addScore;
   }
 
 
   /**
-   * 獲得できるりんごが残り何個あるかをカウントする。りんごが0個になった場合、ゲームを終了する
+   * りんごが0個になった場合、ゲームを終了する
    *
    * @param player コマンドを実行したプレイヤー
    */
-  private void appleCountLeft(Player player) {
-    PlayerScore nowPlayer = getPlayerScore(player);
+  private void finishGameIfApplesGone(Player player) {
+    PlayerData nowPlayer = getPlayerData(player);
+    int count = getAppleCount();
 
+    if (count == 0) {
+      nowPlayer.setGameTime(0);
+    }
+  }
+
+
+  /**
+   * 獲得できるりんごが残り何個あるかをカウントする
+   *
+   * @return　残りのりんごの数
+   */
+  private int getAppleCount() {
     int count = (int) potIDMap.entrySet().stream()
         .filter(
             entry -> entry.getValue().equals(GOLDEN_APPLE_ITEM_DROP)
                 || entry.getValue().equals(APPLE_ITEM_DROP))
         .count();
-
-    if (count == 0) {
-      nowPlayer.setGameTime(0);
-    } else {
-
-      player.sendTitle("", "りんごは残り" + count + "個", 0, 30, 10);
-    }
+    return count;
   }
 
 
@@ -278,30 +309,30 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   private void messageOnFound(String dropItem, Player player, int addScore) {
     switch (dropItem) {
       case GOLDEN_APPLE_ITEM_DROP -> player.sendMessage(
-          "金のりんごを見つけた！（＋" + addScore + "点）");
+          "金のりんごを見つけた！（＋" + addScore + "点）りんごは残り" + getAppleCount() + "個！");
       case APPLE_ITEM_DROP -> player.sendMessage(
-          "りんごを見つけた！（＋" + addScore + "点）");
+          "りんごを見つけた！（＋" + addScore + "点）りんごは残り" + getAppleCount() + "個！");
       default -> player.sendMessage(
-          "ざんねん！はずれ！");
+          "ざんねん！はずれ！りんごは残り" + getAppleCount() + "個！");
     }
   }
 
 
   /**
-   * 現在実行しているプレイヤーのスコア情報を取得する
+   * 現在実行しているプレイヤーの情報を取得する
    *
    * @param player 　コマンドを実行したプレイヤー
    * @return　現在実行しているプレイヤーのスコア情報
    */
-  private PlayerScore getPlayerScore(Player player) {
-    if (playerScoreList.isEmpty()) {
+  private PlayerData getPlayerData(Player player) {
+    if (playerDataList.isEmpty()) {
       return addNewPlayer(player);
     } else {
-      for (PlayerScore playerScore : playerScoreList) {
-        if (!playerScore.getPlayerName().equals(player.getName())) {
+      for (PlayerData playerData : playerDataList) {
+        if (!playerData.getPlayerName().equals(player.getName())) {
           return addNewPlayer(player);
         } else {
-          return playerScore;
+          return playerData;
         }
       }
     }
@@ -315,10 +346,10 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * @param player コマンドを実行したプレイヤー
    * @return　新規プレイヤー
    */
-  private PlayerScore addNewPlayer(Player player) {
-    PlayerScore newPlayer = new PlayerScore();
+  private PlayerData addNewPlayer(Player player) {
+    PlayerData newPlayer = new PlayerData();
     newPlayer.setPlayerName(player.getName());
-    playerScoreList.add(newPlayer);
+    playerDataList.add(newPlayer);
     return newPlayer;
   }
 
