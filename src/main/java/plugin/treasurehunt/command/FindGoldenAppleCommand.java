@@ -30,6 +30,11 @@ import org.bukkit.scoreboard.ScoreboardManager;
 import plugin.treasurehunt.TreasureHunt;
 import plugin.treasurehunt.data.PlayerData;
 
+/**
+ * 制限時間内にランダムに出現した飾り壺を割り、金のりんご、りんごを見つけてスコアを獲得するゲームを起動するコマンドです。
+ * スコアはりんごを見つけた時点のゲームの残り時間によって変動します。また金のりんごを見つけるとボーナススコアが加点されます。 *
+ */
+
 public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
 
@@ -74,9 +79,22 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
     PlayerData nowPlayer = getPlayerData(player);
     player.sendMessage(
-        "ヒント: 金のりんごは + " + BONUS_SCORE + "点！見つける時間が早いほどスコアは高くなります！");
+        "ヒント: 金のりんごは + " + BONUS_SCORE + "点！");
+    player.sendMessage(
+        "ヒント: 見つける時間が早いほどスコアは高くなります！");
     isCountdownActive = true;
+    startCountdown(player, nowPlayer);
 
+    return true;
+  }
+
+  /**
+   * ゲーム開始前にルール説明をする。ルール説明時間は10秒間でカウントダウンする。
+   *
+   * @param player    　コマンドを実行したプレイヤー
+   * @param nowPlayer
+   */
+  private void startCountdown(Player player, PlayerData nowPlayer) {
     Bukkit.getScheduler().runTaskTimer(treasurehunt, Runnable -> {
       if (COUNTDOWN > 0) {
         player.sendTitle(
@@ -85,41 +103,64 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
             0, 20, 0);
 
         COUNTDOWN--;
-
       } else {
         Runnable.cancel();
         isCountdownActive = false;
         COUNTDOWN += 10;
-        potIDMap.clear();
-        player.sendTitle("START", "", 0, 30, 10);
-        spawnedPotRegistry(player);
-
-        nowPlayer.setGameTime(GAME_TIME);
-        nowPlayer.setScore(0);
-        timeLeftOnBossBar(player);
-
-        Bukkit.getScheduler().runTaskTimer(treasurehunt, gameTask -> {
-          if (nowPlayer.getGameTime() <= 0) {
-            gameTask.cancel();
-
-            for (PlayerData playerData : playerDataList) {
-              if (playerData.getPlayerName().equals(player.getName())) {
-                bossBar.removeAll();
-                finishGame(playerData, player);
-              }
-            }
-            return;
-          }
-          bossBar.setTitle("残り時間: " + nowPlayer.getGameTime() + "秒");
-          bossBar.setProgress((double) nowPlayer.getGameTime() / GAME_TIME);
-
-          displayTotalScoreOnBoard(player, nowPlayer);
-          nowPlayer.setGameTime(nowPlayer.getGameTime() - 1);
-        }, 0, 1 * 20);
+        intiGameSetup(player, nowPlayer);
       }
     }, 0, 1 * 20);
+  }
 
-    return true;
+  /**
+   * @param player
+   * @param nowPlayer
+   */
+  private void intiGameSetup(Player player, PlayerData nowPlayer) {
+    potIDMap.clear();
+    player.sendTitle("START", "", 0, 30, 10);
+    spawnedPotRegistry(player);
+
+    nowPlayer.setGameTime(GAME_TIME);
+    nowPlayer.setScore(0);
+    timeLeftOnBossBar(player);
+
+    runGameTimer(player, nowPlayer);
+  }
+
+  /**
+   * ゲームタイマーの処理
+   *
+   * @param player
+   * @param nowPlayer
+   */
+  private void runGameTimer(Player player, PlayerData nowPlayer) {
+    Bukkit.getScheduler().runTaskTimer(treasurehunt, gameTask -> {
+      if (nowPlayer.getGameTime() <= 0) {
+        gameTask.cancel();
+
+        for (PlayerData playerData : playerDataList) {
+          if (playerData.getPlayerName().equals(player.getName())) {
+            bossBar.removeAll();
+            finishGame(playerData, player);
+          }
+        }
+        return;
+      }
+      updateBossBar(nowPlayer);
+      displayTotalScoreOnBoard(player, nowPlayer);
+      nowPlayer.setGameTime(nowPlayer.getGameTime() - 1);
+    }, 0, 1 * 20);
+  }
+
+  /**
+   * ボスバーを更新する
+   *
+   * @param nowPlayer
+   */
+  private void updateBossBar(PlayerData nowPlayer) {
+    bossBar.setTitle("残り時間: " + nowPlayer.getGameTime() + "秒");
+    bossBar.setProgress((double) nowPlayer.getGameTime() / GAME_TIME);
   }
 
 
