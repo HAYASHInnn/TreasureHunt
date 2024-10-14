@@ -20,6 +20,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
@@ -38,7 +39,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   // GAME_TIMEの単位は秒
   public static final int GAME_TIME = 40;
 
-  public static int COUNTDOWN = 6;
+  public static int COUNTDOWN = 10;
 
   public static final String GOLDEN_APPLE_ITEM_DROP = "golden_apple";
   public static final String APPLE_ITEM_DROP = "apple";
@@ -52,6 +53,9 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   private ScoreboardManager scoreboardManager;
   private Scoreboard scoreboard;
   private Objective objective;
+
+  // カウントダウン中のフラグ
+  private boolean isCountdownActive = false;
 
 
   private final TreasureHunt treasurehunt;
@@ -69,37 +73,68 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       String[] args) {
 
     PlayerData nowPlayer = getPlayerData(player);
-    nowPlayer.setGameTime(GAME_TIME);
-    nowPlayer.setScore(0);
-
-    timeLeftOnBossBar(player);
-
-    potIDMap.clear();
-    player.sendTitle("START", "飾り壺を割って金のりんごを探せ！", 0, 30, 10);
-    
-    spawnedPotRegistry(player);
+    player.sendMessage(
+        "ヒント: 金のりんごは + " + BONUS_SCORE + "点！見つける時間が早いほどスコアは高くなります！");
+    isCountdownActive = true;
 
     Bukkit.getScheduler().runTaskTimer(treasurehunt, Runnable -> {
-      if (nowPlayer.getGameTime() <= 0) {
+      if (COUNTDOWN > 0) {
+        player.sendTitle(
+            "ゲーム開始まで" + COUNTDOWN + " 秒",
+            "ルール: 飾り壺を割って りんごを見つけよう！",
+            0, 20, 0);
+
+        COUNTDOWN--;
+
+      } else {
         Runnable.cancel();
+        isCountdownActive = false;
+        COUNTDOWN += 10;
+        potIDMap.clear();
+        player.sendTitle("START", "", 0, 30, 10);
+        spawnedPotRegistry(player);
 
-        for (PlayerData playerData : playerDataList) {
-          if (playerData.getPlayerName().equals(player.getName())) {
-            bossBar.removeAll();
-            finishGame(playerData, player);
+        nowPlayer.setGameTime(GAME_TIME);
+        nowPlayer.setScore(0);
+        timeLeftOnBossBar(player);
+
+        Bukkit.getScheduler().runTaskTimer(treasurehunt, gameTask -> {
+          if (nowPlayer.getGameTime() <= 0) {
+            gameTask.cancel();
+
+            for (PlayerData playerData : playerDataList) {
+              if (playerData.getPlayerName().equals(player.getName())) {
+                bossBar.removeAll();
+                finishGame(playerData, player);
+              }
+            }
+            return;
           }
-        }
-        return;
+          bossBar.setTitle("残り時間: " + nowPlayer.getGameTime() + "秒");
+          bossBar.setProgress((double) nowPlayer.getGameTime() / GAME_TIME);
+
+          displayTotalScoreOnBoard(player, nowPlayer);
+          nowPlayer.setGameTime(nowPlayer.getGameTime() - 1);
+        }, 0, 1 * 20);
       }
-      bossBar.setTitle("残り時間: " + nowPlayer.getGameTime() + "秒");
-      bossBar.setProgress((double) nowPlayer.getGameTime() / GAME_TIME);
-
-      displayTotalScoreOnBoard(player, nowPlayer);
-
-      nowPlayer.setGameTime(nowPlayer.getGameTime() - 1);
     }, 0, 1 * 20);
 
     return true;
+  }
+
+
+  @EventHandler
+  public void onPlayerMove(PlayerMoveEvent event) {
+    if (isCountdownActive) {
+      Player player = event.getPlayer();
+      Location from = event.getFrom();
+      Location to = event.getTo();
+
+      // 実際に移動が発生しようとした場合、位置を元に戻す
+      if (to != null && (from.getX() != to.getX() || from.getZ() != to.getZ())) {
+        player.teleport(from);
+      }
+    }
   }
 
 
@@ -174,12 +209,29 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    */
   private void spawnedPotRegistry(Player player) {
     for (int i = 1; i <= POT_AMOUNT; i++) {
-      Block block = getDecoratedPotLocation(player).getBlock();
+      Block block = findEmptyLocation(player);
+
       block.setType(Material.DECORATED_POT);
 
       String itemDrop = idItemDrop(i);
       potIDMap.put(block, itemDrop);
     }
+  }
+
+  /**
+   * 空いている位置を見つけるための再帰メソッド
+   *
+   * @param player コマンドを実行したプレイヤー
+   * @return 空いているブロック位置
+   */
+  private Block findEmptyLocation(Player player) {
+    Location location = getDecoratedPotLocation(player);
+    Block block = location.getBlock();
+
+    if (block.getType() != Material.AIR) {
+      return findEmptyLocation(player);
+    }
+    return block;
   }
 
   /**
@@ -330,11 +382,11 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   private void messageOnFound(String dropItem, Player player, int addScore) {
     switch (dropItem) {
       case GOLDEN_APPLE_ITEM_DROP -> player.sendMessage(
-          "金のりんごを見つけた！（＋" + addScore + "点）りんごは残り" + getAppleCount() + "個！");
+          "金のりんごを見つけた！（＋" + addScore + "点）   りんごは残り" + getAppleCount() + "個！");
       case APPLE_ITEM_DROP -> player.sendMessage(
-          "りんごを見つけた！（＋" + addScore + "点）りんごは残り" + getAppleCount() + "個！");
+          "りんごを見つけた！（＋" + addScore + "点）   　　りんごは残り" + getAppleCount() + "個！");
       default -> player.sendMessage(
-          "ざんねん！はずれ！りんごは残り" + getAppleCount() + "個！");
+          "ざんねん！はずれ！　りんごは残り" + getAppleCount() + "個！");
     }
   }
 
