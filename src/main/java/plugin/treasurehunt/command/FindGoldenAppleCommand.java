@@ -72,13 +72,11 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     nowPlayer.setGameTime(GAME_TIME);
     nowPlayer.setScore(0);
 
-    // ボスバーを作成し、残り時間を表示
-    bossBar = Bukkit.createBossBar("残り時間: " + GAME_TIME + "秒", BarColor.BLUE, BarStyle.SOLID);
-    bossBar.setProgress(1.0); // ボスバーの進行度を100%に設定
-    bossBar.addPlayer(player);
+    timeLeftOnBossBar(player);
 
     potIDMap.clear();
     player.sendTitle("START", "飾り壺を割って金のりんごを探せ！", 0, 30, 10);
+    
     spawnedPotRegistry(player);
 
     Bukkit.getScheduler().runTaskTimer(treasurehunt, Runnable -> {
@@ -102,6 +100,18 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     }, 0, 1 * 20);
 
     return true;
+  }
+
+
+  /**
+   * ボスバーで、ゲームの残り時間を表示する。
+   *
+   * @param player 　コマンドを実行したプレイヤー
+   */
+  private void timeLeftOnBossBar(Player player) {
+    bossBar = Bukkit.createBossBar("残り時間: " + GAME_TIME + "秒", BarColor.BLUE, BarStyle.SOLID);
+    bossBar.setProgress(1.0); // ボスバーの進行度を100%に設定
+    bossBar.addPlayer(player);
   }
 
 
