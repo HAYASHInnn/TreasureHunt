@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.SplittableRandom;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -91,16 +92,17 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
 
   @EventHandler
-  public void onPlayerMove(PlayerMoveEvent event) {
+  public void onPlayerMove(PlayerMoveEvent e) {
     if (isCountdownActive) {
-      Player player = event.getPlayer();
-      Location from = event.getFrom();
-      Location to = event.getTo();
+      Player player = e.getPlayer();
+      Location from = e.getFrom();
+      Location to = e.getTo();
 
       // 実際に移動が発生しようとした場合、位置を元に戻す
-      if (to != null && (from.getX() != to.getX() || from.getZ() != to.getZ())) {
-        player.teleport(from);
+      if (to == null || (from.getX() == to.getX() && from.getZ() == to.getZ())) {
+        return;
       }
+      player.teleport(from);
     }
   }
 
@@ -139,7 +141,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
         COUNTDOWN_TIME += 5;
         intiGameSetup(player, nowPlayer);
       }
-    }, 0, 1 * 20);
+    }, 0, 20);
   }
 
 
@@ -238,17 +240,16 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
         gameTask.cancel();
         bossBar.removeAll();
 
-        for (PlayerData playerData : playerDataList) {
-          if (playerData.getPlayerName().equals(player.getName())) {
-            finishGame(playerData, player);
-          }
-        }
-        return;
+        playerDataList.stream()
+            .filter(p -> p.getPlayerName().equals(player.getName()))
+            .findFirst()
+            .ifPresent(p -> finishGame(p, player));
       }
+
       updateBossBar(nowPlayerData);
       displayTotalScoreOnBoard(player, nowPlayerData);
       nowPlayerData.setGameTime(nowPlayerData.getGameTime() - 1);
-    }, 0, 1 * 20);
+    }, 0, 20);
   }
 
 
@@ -327,9 +328,11 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     Block block = breakEvent.getBlock();
     Player player = breakEvent.getPlayer();
 
-    if (playerDataList.isEmpty()) {
+    if (Objects.isNull(player) || playerDataList.isEmpty()) {
       return;
     }
+
+    // TODO：かつpotIDMapに登録されているDECORATED_POTだったらを追加
 
     if (block.getType() == Material.DECORATED_POT) {
       String dropItem = potIDMap.get(block);
@@ -392,6 +395,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       case GOLDEN_APPLE_ITEM_DROP -> addScore += BONUS_SCORE;
     }
 
+    // HACK:ifが少ないコードにしたい
     int remainingTime = playerData.getGameTime();
     if (remainingTime > HIGH_SCORE_TIME_LEFT) {
       addScore += 100;
