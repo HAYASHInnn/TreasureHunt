@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.SplittableRandom;
 import org.bukkit.Bukkit;
@@ -233,6 +232,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
             .filter(p -> p.getPlayerName().equals(player.getName()))
             .findFirst()
             .ifPresent(p -> finishGame(p, player));
+        return;
       }
 
       updateBossBar(nowPlayerData);
@@ -255,15 +255,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
 
     bossBar.removeAll();
-
-    // 壊れていない飾り壺を消す
-    potIDMap.entrySet().stream()
-        .filter(
-            entry -> entry.getValue().equals(NONE_ITEM_DROP)
-                || entry.getValue().equals(GOLDEN_APPLE_ITEM_DROP)
-                || entry.getValue().equals(APPLE_ITEM_DROP))
-        .map(Entry::getKey)
-        .forEach(key -> key.setType(Material.AIR));
+    potIDMap.keySet().forEach(block -> block.setType(Material.AIR));
   }
 
 
@@ -444,7 +436,6 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     int count = getAppleCount();
     if (count == 0) {
       getPlayerData(player).setGameTime(0);
-      finishGame(getPlayerData(player), player);
     }
   }
 
