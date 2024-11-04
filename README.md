@@ -1,8 +1,8 @@
 # Treasure Hunt - Minecraft Plugin
 
 ## 使用技術一覧
-<img src="https://img.shields.io/badge/-Java-007396.svg?logo=java&style=for-the-badge"> <img alt="Static Badge" src="https://img.shields.io/badge/Mysql-brightgreen?style=for-the-badge&logo=mysql&logoColor=white&color=4479A1"> <img alt="Static Badge" src="https://img.shields.io/badge/MyBatis-brightgreen?style=for-the-badge&color=D74C4C">
- <img alt="Static Badge" src="https://img.shields.io/badge/spigotmc-v1.20.4-brightgreen?style=for-the-badge&logo=spigotmc&logoColor=white&labelColor=F39C12&color=333333">
+<img src="https://img.shields.io/badge/-Java-007396.svg?logo=java&style=for-the-badge"> <img alt="Static Badge" src="https://img.shields.io/badge/mysql-brightgreen?style=for-the-badge&logo=mysql&logoColor=white&logoSize=auto&color=4479A1"> <img alt="Static Badge" src="https://img.shields.io/badge/MyBatis-brightgreen?style=for-the-badge&color=D74C4C"> <img alt="Static Badge" src="https://img.shields.io/badge/spigotmc-v1.20.4-brightgreen?style=for-the-badge&logo=spigotmc&logoColor=white&logoSize=auto&labelColor=ED8106&color=333333">
+
 
 
 
