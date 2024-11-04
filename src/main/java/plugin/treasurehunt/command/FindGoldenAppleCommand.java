@@ -85,6 +85,11 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
     PlayerData nowPlayerData = getPlayerData(player);
 
+    player.sendMessage(
+        "ヒント: 金のりんごは +" + BONUS_SCORE + "点！");
+    player.sendMessage(
+        "ヒント: 見つける時間が早いほどスコアは高くなります！");
+
     isCountdownActive = true;
     startCountdown(player, nowPlayerData);
 
@@ -147,14 +152,10 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
             "ルール: 飾り壺を割って りんごを見つけよう！",
             0, 20, 0);
 
-        player.sendMessage(
-            "ヒント: 金のりんごは +" + BONUS_SCORE + "点！");
-        player.sendMessage(
-            "ヒント: 見つける時間が早いほどスコアは高くなります！");
-
         COUNTDOWN_TIME--;
       } else {
         Runnable.cancel();
+
         isCountdownActive = false;
         COUNTDOWN_TIME += 5;
 
@@ -273,17 +274,6 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
       nowPlayerData.setGameTime(nowPlayerData.getGameTime() - 1);
     }, 0, 20);
-  }
-
-
-  /**
-   * ゲーム終了処理。FINISHメッセージを表示し、スコアを表示。
-   *
-   * @param playerData 　 プレイヤー情報
-   * @param player     　コマンドを実行したプレイヤー
-   */
-  private void finishGame(PlayerData playerData, Player player) {
-
   }
 
 
