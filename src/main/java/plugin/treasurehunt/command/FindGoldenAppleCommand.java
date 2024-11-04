@@ -55,7 +55,6 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   private BossBar bossBar;
   private ScoreboardManager scoreboardManager;
   private Scoreboard scoreboard;
-  private Objective objective;
 
   // カウントダウン中のフラグ
   private boolean isCountdownActive = false;
@@ -74,7 +73,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       String[] args) {
 
     PlayerData nowPlayerData = getPlayerData(player);
-    sendHintToPlayer(player);
+
     isCountdownActive = true;
     startCountdown(player, nowPlayerData);
 
@@ -106,19 +105,6 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
 
   /**
-   * プレイヤーにゲームのヒントを送る
-   *
-   * @param player 　コマンドを実行したプレイヤー
-   */
-  private static void sendHintToPlayer(Player player) {
-    player.sendMessage(
-        "ヒント: 金のりんごは +" + BONUS_SCORE + "点！");
-    player.sendMessage(
-        "ヒント: 見つける時間が早いほどスコアは高くなります！");
-  }
-
-
-  /**
    * ゲーム開始前にルール説明をする。ルール説明時間は5秒間でカウントダウンする。
    *
    * @param player    　コマンドを実行したプレイヤー
@@ -132,6 +118,11 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
             "ルール: 飾り壺を割って りんごを見つけよう！",
             0, 20, 0);
 
+        player.sendMessage(
+            "ヒント: 金のりんごは +" + BONUS_SCORE + "点！");
+        player.sendMessage(
+            "ヒント: 見つける時間が早いほどスコアは高くなります！");
+
         COUNTDOWN_TIME--;
       } else {
         Runnable.cancel();
@@ -139,10 +130,13 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
         COUNTDOWN_TIME += 5;
 
         potIDMap.clear();
+        getPlayerData(player).setScore(0);
+
         player.sendTitle("START", "", 0, 30, 10);
+
         spawnedPotRegistry(player);
         timeLeftOnBossBar(player);
-        getPlayerData(player).setScore(0);
+
         runGameTimer(player, nowPlayer);
       }
     }, 0, 20);
@@ -235,8 +229,11 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
         return;
       }
 
-      updateBossBar(nowPlayerData);
+      bossBar.setTitle("残り時間: " + nowPlayerData.getGameTime() + "秒");
+      bossBar.setProgress((double) nowPlayerData.getGameTime() / GAME_TIME);
+
       displayTotalScoreOnBoard(player, nowPlayerData);
+
       nowPlayerData.setGameTime(nowPlayerData.getGameTime() - 1);
     }, 0, 20);
   }
@@ -256,17 +253,6 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
     bossBar.removeAll();
     potIDMap.keySet().forEach(block -> block.setType(Material.AIR));
-  }
-
-
-  /**
-   * ボスバーを更新する
-   *
-   * @param nowPlayer 　現在実行しているプレイヤー情報
-   */
-  private void updateBossBar(PlayerData nowPlayer) {
-    bossBar.setTitle("残り時間: " + nowPlayer.getGameTime() + "秒");
-    bossBar.setProgress((double) nowPlayer.getGameTime() / GAME_TIME);
   }
 
 
