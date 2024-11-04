@@ -79,7 +79,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       String[] args) {
     // 最初の引数が「list」だったらスコアを一覧表示して処理を終了する
     if (args.length == 1 && LIST.equals(args[0])) {
-      sendPlayerScoreList(player);
+      sendPlayerScoreRank(player);
       return false;
     }
 
@@ -125,16 +125,26 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    *
    * @param player 　プレイヤー
    */
-  private void sendPlayerScoreList(Player player) {
+  private void sendPlayerScoreRank(Player player) {
     List<PlayerScore> playerScoreList = playerScoreData.selectList();
+
+    player.sendMessage("======== 🏆 現在のランキング Top 5 🏆 ========");
+    player.sendMessage("順位 | プレイヤー名 | スコア | 登録日時");
+
+    int rank = 1;
     for (PlayerScore playerScore : playerScoreList) {
       player.sendMessage(
-          playerScore.getId() + " | "
-              + playerScore.getPlayerName() + " | "
-              + playerScore.getScore() + " | "
-              + playerScore.getRegisteredAt()
-              .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+          String.format("%2d位 | %-10s | %5d | %s",
+              rank,
+              playerScore.getPlayerName(),
+              playerScore.getScore(),
+              playerScore.getRegisteredAt()
+                  .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+          )
+      );
+      rank++;
     }
+    player.sendMessage("=======================================");
   }
 
 

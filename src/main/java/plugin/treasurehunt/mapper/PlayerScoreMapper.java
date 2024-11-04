@@ -7,7 +7,7 @@ import plugin.treasurehunt.mapper.data.PlayerScore;
 
 public interface PlayerScoreMapper {
 
-  @Select("select * from player_score")
+  @Select("select * from player_score order by score DESC limit 5")
   List<PlayerScore> selectList();
 
   @Insert("insert player_score(player_name, score, registered_at) values (#{playerName}, #{score}, now())")
