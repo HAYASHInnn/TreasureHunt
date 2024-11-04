@@ -1,5 +1,6 @@
 package plugin.treasurehunt.command;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,8 +28,10 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
+import plugin.treasurehunt.PlayerScoreData;
 import plugin.treasurehunt.TreasureHunt;
 import plugin.treasurehunt.data.PlayerData;
+import plugin.treasurehunt.mapper.data.PlayerScore;
 
 /**
  * 制限時間内にランダムに出現した飾り壺を割り、金のりんご、りんごを見つけてスコアを獲得するゲームを起動するコマンドです。
@@ -48,6 +51,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   public static final String GOLDEN_APPLE_ITEM_DROP = "golden_apple";
   public static final String APPLE_ITEM_DROP = "apple";
   public static final String NONE_ITEM_DROP = "none";
+  public static final String LIST = "list";
 
   // 金のりんごを発見したときのボーナススコア
   public static final int BONUS_SCORE = 50;
@@ -60,6 +64,8 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   private boolean isCountdownActive = false;
 
   private final TreasureHunt treasurehunt;
+  private final PlayerScoreData playerScoreData = new PlayerScoreData();
+
   private final List<PlayerData> playerDataList = new ArrayList<>();
   private final Map<Block, String> potIDMap = new HashMap<>();
 
@@ -71,6 +77,11 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   @Override
   public boolean onExecutePlayerCommand(Player player, Command command, String label,
       String[] args) {
+    // 最初の引数が「list」だったらスコアを一覧表示して処理を終了する
+    if (args.length == 1 && LIST.equals(args[0])) {
+      sendPlayerScoreList(player);
+      return false;
+    }
 
     PlayerData nowPlayerData = getPlayerData(player);
 
@@ -100,6 +111,24 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
         return;
       }
       player.teleport(from);
+    }
+  }
+
+
+  /**
+   * 現在登録されているスコアの一覧をメッセージに送る。
+   *
+   * @param player 　プレイヤー
+   */
+  private void sendPlayerScoreList(Player player) {
+    List<PlayerScore> playerScoreList = playerScoreData.selectList();
+    for (PlayerScore playerScore : playerScoreList) {
+      player.sendMessage(
+          playerScore.getId() + " | "
+              + playerScore.getPlayerName() + " | "
+              + playerScore.getScore() + " | "
+              + playerScore.getRegisteredAt()
+              .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
     }
   }
 
@@ -222,10 +251,18 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       if (nowPlayerData.getGameTime() <= 0) {
         gameTask.cancel();
 
-        playerDataList.stream()
-            .filter(p -> p.getPlayerName().equals(player.getName()))
-            .findFirst()
-            .ifPresent(p -> finishGame(p, player));
+        player.sendTitle("FINISH", "TOTAL SCORE：" + nowPlayerData.getScore(), 0, 60, 10);
+
+        // 空のスコアボードを設定して、ゲーム中のスコアボードを非表示にする
+        player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+
+        bossBar.removeAll();
+        potIDMap.keySet().forEach(block -> block.setType(Material.AIR));
+
+        playerScoreData.insert(
+            new PlayerScore(nowPlayerData.getPlayerName()
+                , nowPlayerData.getScore()));
+
         return;
       }
 
@@ -246,13 +283,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * @param player     　コマンドを実行したプレイヤー
    */
   private void finishGame(PlayerData playerData, Player player) {
-    player.sendTitle("FINISH", "TOTAL SCORE：" + playerData.getScore(), 0, 60, 10);
 
-    // 空のスコアボードを設定して、ゲーム中のスコアボードを非表示にする
-    player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
-
-    bossBar.removeAll();
-    potIDMap.keySet().forEach(block -> block.setType(Material.AIR));
   }
 
 
