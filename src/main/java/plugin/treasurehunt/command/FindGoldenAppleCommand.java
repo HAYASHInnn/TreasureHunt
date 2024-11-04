@@ -389,23 +389,20 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   private Integer getAddScore(PlayerData playerData, String dropItem, Player player) {
     int addScore = 0;
 
-    switch (dropItem) {
-      case NONE_ITEM_DROP -> {
-        messageOnFound(dropItem, player, addScore);
-        return null;
-      }
-      case GOLDEN_APPLE_ITEM_DROP -> addScore += BONUS_SCORE;
+    if (dropItem.equals(NONE_ITEM_DROP)) {
+      messageOnFound(dropItem, player, addScore);
+      return null;
     }
 
-    // HACK:ifが少ないコードにしたい
-    int remainingTime = playerData.getGameTime();
-    if (remainingTime > 30) {
-      addScore += 100;
-    } else if (remainingTime > 20) {
-      addScore += 50;
-    } else if (remainingTime > 0) {
-      addScore += 10;
+    int nowTime = playerData.getGameTime();
+    addScore = (nowTime >= 30) ? 100
+             : (nowTime >= 20) ? 50
+                               : 10;
+
+    if (dropItem.equals(GOLDEN_APPLE_ITEM_DROP)) {
+      addScore += BONUS_SCORE;
     }
+
     playerData.setScore(playerData.getScore() + addScore);
     return addScore;
   }
