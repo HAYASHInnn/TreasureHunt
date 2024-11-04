@@ -41,11 +41,11 @@ import plugin.treasurehunt.mapper.data.PlayerScore;
 public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
   // 設定の変更をしやすくするために定数にしています
-  public static final int POT_AMOUNT = 10;
+  public static final int POT_AMOUNT = 15;
   public static final int APPLE_AMOUNT = 2;
 
   // TIMEの単位は秒
-  public static final int GAME_TIME = 90;
+  public static final int GAME_TIME = 60;
   public static int COUNTDOWN_TIME = 5;
 
   public static final String GOLDEN_APPLE_ITEM_DROP = "golden_apple";
@@ -224,8 +224,8 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    */
   private Location getDecoratedPotLocation(Player player) {
     Location playerlocation = player.getLocation();
-    int randomX = new SplittableRandom().nextInt(20) - 10;
-    int randomZ = new SplittableRandom().nextInt(20) - 10;
+    int randomX = new SplittableRandom().nextInt(30) - 15;
+    int randomZ = new SplittableRandom().nextInt(30) - 15;
 
     double x = playerlocation.getX() + randomX;
     double y = playerlocation.getY();
@@ -397,8 +397,8 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     }
 
     int nowTime = playerData.getGameTime();
-    addScore = (nowTime >= 60) ? 100
-             : (nowTime >= 30) ? 50
+    addScore = (nowTime >= 40) ? 100
+             : (nowTime >= 20) ? 50
                                : 10;
 
     if (dropItem.equals(GOLDEN_APPLE_ITEM_DROP)) {
