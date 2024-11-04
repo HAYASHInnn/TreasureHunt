@@ -41,11 +41,11 @@ import plugin.treasurehunt.mapper.data.PlayerScore;
 public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
   // 設定の変更をしやすくするために定数にしています
-  public static final int POT_AMOUNT = 5;
+  public static final int POT_AMOUNT = 10;
   public static final int APPLE_AMOUNT = 2;
 
   // TIMEの単位は秒
-  public static final int GAME_TIME = 40;
+  public static final int GAME_TIME = 90;
   public static int COUNTDOWN_TIME = 5;
 
   public static final String GOLDEN_APPLE_ITEM_DROP = "golden_apple";
@@ -193,6 +193,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       Block block = findEmptyLocation(player);
 
       block.setType(Material.DECORATED_POT);
+
       String itemDrop = idItemDrop(i);
       potIDMap.put(block, itemDrop);
     }
@@ -223,8 +224,8 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    */
   private Location getDecoratedPotLocation(Player player) {
     Location playerlocation = player.getLocation();
-    int randomX = new SplittableRandom().nextInt(10) - 5;
-    int randomZ = new SplittableRandom().nextInt(10) - 5;
+    int randomX = new SplittableRandom().nextInt(20) - 10;
+    int randomZ = new SplittableRandom().nextInt(20) - 10;
 
     double x = playerlocation.getX() + randomX;
     double y = playerlocation.getY();
@@ -249,6 +250,19 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
       return NONE_ITEM_DROP;
     }
   }
+
+
+  /**
+   * ボスバーでゲームの残り時間を表示する。
+   *
+   * @param player 　コマンドを実行したプレイヤー
+   */
+  private void timeLeftOnBossBar(Player player) {
+    bossBar = Bukkit.createBossBar("残り時間: " + GAME_TIME + "秒", BarColor.BLUE, BarStyle.SOLID);
+    bossBar.setProgress(1.0); // ボスバーの進行度を100%に設定
+    bossBar.addPlayer(player);
+  }
+
 
 
   /**
@@ -284,18 +298,6 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
       nowPlayerData.setGameTime(nowPlayerData.getGameTime() - 1);
     }, 0, 20);
-  }
-
-
-  /**
-   * ボスバーでゲームの残り時間を表示する。
-   *
-   * @param player 　コマンドを実行したプレイヤー
-   */
-  private void timeLeftOnBossBar(Player player) {
-    bossBar = Bukkit.createBossBar("残り時間: " + GAME_TIME + "秒", BarColor.BLUE, BarStyle.SOLID);
-    bossBar.setProgress(1.0); // ボスバーの進行度を100%に設定
-    bossBar.addPlayer(player);
   }
 
 
@@ -395,8 +397,8 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     }
 
     int nowTime = playerData.getGameTime();
-    addScore = (nowTime >= 30) ? 100
-             : (nowTime >= 20) ? 50
+    addScore = (nowTime >= 60) ? 100
+             : (nowTime >= 30) ? 50
                                : 10;
 
     if (dropItem.equals(GOLDEN_APPLE_ITEM_DROP)) {
