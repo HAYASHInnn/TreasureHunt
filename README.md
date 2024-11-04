@@ -1,11 +1,14 @@
 # Treasure Hunt - Minecraft Plugin
 
+## 使用技術一覧
+<img src="https://img.shields.io/badge/-Java-007396.svg?logo=java&style=for-the-badge"> <img alt="Static Badge" src="https://img.shields.io/badge/Mysql-brightgreen?style=for-the-badge&logo=mysql&logoColor=white&color=4479A1"> <img alt="Static Badge" src="https://img.shields.io/badge/MyBatis-brightgreen?style=for-the-badge&color=D74C4C">
+ <img alt="Static Badge" src="https://img.shields.io/badge/spigotmc-v1.20.4-brightgreen?style=for-the-badge&logo=spigotmc&logoColor=white&labelColor=F39C12&color=333333">
+
+
+
 ## 概要
 
 **Treasure Hunt**は、制限時間内にフィールドにランダムに配置された「飾り壺」を壊し、りんごや金のりんごを見つけてスコアを獲得するミニゲームです。りんごを早く見つけるほど高得点となり、特定の条件下でボーナススコアが加算されます。
-
-## 使用技術一覧
-
 
 ## 特徴
 
