@@ -84,7 +84,7 @@
 >   PRIMARY KEY (id)
 > );
 > ```
-> :exclamation:必要に応じて、プロジェクトの`src/main/resources/mybatis-config.xml`を開き、
+> :white_check_mark:　　必要に応じて、プロジェクトの`src/main/resources/mybatis-config.xml`を開き、
 >
 > 　下記***をご自身のMySQLの設定に変更してください。
 > ```
@@ -101,7 +101,7 @@
 | `GAME_TIME`              | ゲームの制限時間          | 60秒        |
 | `BONUS_SCORE`            | 金のりんごのボーナススコア  | 50点        | 
 
-🛠️ 設定は`FindGoldenAppleCommand`クラス内で調整可能です！
+:white_check_mark:　　設定は`FindGoldenAppleCommand`クラス内で調整可能です！
 
 
 
