@@ -57,7 +57,7 @@
    - サーバーを再起動してプラグインが正常に読み込まれるか確認します。
 
 > [!IMPORTANT]
-> ## MySQL データベースの設定手順
+> **MySQL データベースの設定手順**
 >
 > このプロジェクトには、MySQLデータベースが必要です。
 >
@@ -84,7 +84,9 @@
 >   PRIMARY KEY (id)
 > );
 > ```
-> :exclamation:必要に応じて、プロジェクトの`src/main/resources/mybatis-config.xml`を開き、下記***の箇所をご自身の設定に変更してください。
+> :exclamation:必要に応じて、プロジェクトの`src/main/resources/mybatis-config.xml`を開き、
+>
+> 　下記***をご自身のMySQLの設定に変更してください。
 > ```
 > <property name="username" value="****"/>
 > <property name="password" value="******"/>
