@@ -433,11 +433,11 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * @return　残りのりんごの数
    */
   private int getAppleCount() {
-    return (int) potIDMap.entrySet().stream()
+    return Math.toIntExact(potIDMap.entrySet().stream()
         .filter(
             entry -> entry.getValue().equals(GOLDEN_APPLE_ITEM_DROP)
                 || entry.getValue().equals(APPLE_ITEM_DROP))
-        .count();
+        .count());
   }
 
 
