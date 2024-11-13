@@ -135,14 +135,13 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     for (PlayerScore playerScore : playerScoreList) {
       player.sendMessage(
           String.format("%2d位 | %-10s | %5d | %s",
-              rank,
+              rank++,
               playerScore.getPlayerName(),
               playerScore.getScore(),
               playerScore.getRegisteredAt()
                   .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
           )
       );
-      rank++;
     }
     player.sendMessage("=======================================");
   }
@@ -158,11 +157,10 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
     Bukkit.getScheduler().runTaskTimer(treasurehunt, Runnable -> {
       if (COUNTDOWN_TIME > 0) {
         player.sendTitle(
-            "ゲーム開始まで" + COUNTDOWN_TIME + " 秒",
+            "ゲーム開始まで" + COUNTDOWN_TIME-- + " 秒",
             "ルール: 飾り壺を割って りんごを見つけよう！",
             0, 20, 0);
 
-        COUNTDOWN_TIME--;
       } else {
         Runnable.cancel();
 
@@ -174,7 +172,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
         player.sendTitle("START", "", 0, 30, 10);
 
-        spawnedPotRegistry(player);
+        setUpPots(player);
         timeLeftOnBossBar(player);
 
         runGameTimer(player, nowPlayer);
@@ -188,7 +186,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    *
    * @param player コマンドを実行したプレイヤー
    */
-  private void spawnedPotRegistry(Player player) {
+  private void setUpPots(Player player) {
     for (int i = 1; i <= POT_AMOUNT; i++) {
       Block block = findEmptyLocation(player);
 
