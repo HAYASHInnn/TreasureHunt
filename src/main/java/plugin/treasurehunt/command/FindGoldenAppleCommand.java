@@ -432,12 +432,12 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    *
    * @return　残りのりんごの数
    */
-  private int getAppleCount() {
-    return Math.toIntExact(potIDMap.entrySet().stream()
+  private long getAppleCount() {
+    return potIDMap.entrySet().stream()
         .filter(
             entry -> entry.getValue().equals(GOLDEN_APPLE_ITEM_DROP)
                 || entry.getValue().equals(APPLE_ITEM_DROP))
-        .count());
+        .count();
   }
 
 
@@ -447,7 +447,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * @param player コマンドを実行したプレイヤー
    */
   private void finishGameIfApplesGone(Player player) {
-    int count = getAppleCount();
+    long count = getAppleCount();
     if (count == 0) {
       getPlayerData(player).setGameTime(0);
     }
