@@ -48,9 +48,6 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   public static final int GAME_TIME = 60;
   public static int COUNTDOWN_TIME = 5;
 
-  public static final String GOLDEN_APPLE_ITEM_DROP = "golden_apple";
-  public static final String APPLE_ITEM_DROP = "apple";
-  public static final String NONE_ITEM_DROP = "none";
   public static final String LIST = "list";
 
   // 金のりんごを発見したときのボーナススコア
@@ -67,7 +64,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   private final PlayerScoreData playerScoreData = new PlayerScoreData();
 
   private final List<PlayerData> playerDataList = new ArrayList<>();
-  private final Map<Block, String> potIDMap = new HashMap<>();
+  private final Map<Block, DropItem> potIDMap = new HashMap<>();
 
 
   public FindGoldenAppleCommand(TreasureHunt treasurehunt) {
@@ -192,7 +189,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
       block.setType(Material.DECORATED_POT);
 
-      String itemDrop = idItemDrop(i);
+      DropItem itemDrop = idItemDrop(i);
       potIDMap.put(block, itemDrop);
     }
   }
@@ -239,13 +236,13 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * @param id 出現した飾り壺のID
    * @return ドロップアイテムの種類
    */
-  private String idItemDrop(int id) {
+  private DropItem idItemDrop(int id) {
     if (id == 1) {
-      return GOLDEN_APPLE_ITEM_DROP;
+      return DropItem.GOLDEN_APPLE_DROP;
     } else if (id >= 2 && id <= 2 + APPLE_AMOUNT - 1) {
-      return APPLE_ITEM_DROP;
+      return DropItem.APPLE_DROP;
     } else {
-      return NONE_ITEM_DROP;
+      return DropItem.NONE_DROP;
     }
   }
 
@@ -337,7 +334,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
         .findFirst()
         .ifPresent(entry -> {
 
-          String dropItem = potIDMap.get(block);
+          DropItem dropItem = potIDMap.get(block);
           dropItemOnPotBreak(breakEvent, dropItem, block);
 
           if ("NONE_ITEM_DROP".equals(dropItem)) {
@@ -367,13 +364,13 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * @param dropItem   飾り壺を壊した後のドロップアイテム
    * @param block      ゲーム開始時に出現した飾り壺
    */
-  private static void dropItemOnPotBreak(BlockBreakEvent breakEvent, String dropItem, Block block) {
+  private static void dropItemOnPotBreak(BlockBreakEvent breakEvent, DropItem dropItem, Block block) {
     switch (dropItem) {
-      case GOLDEN_APPLE_ITEM_DROP -> block.getWorld()
+      case GOLDEN_APPLE_DROP -> block.getWorld()
           .dropItemNaturally(block.getLocation(), new ItemStack(Material.GOLDEN_APPLE));
-      case APPLE_ITEM_DROP -> block.getWorld()
+      case APPLE_DROP -> block.getWorld()
           .dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
-      case NONE_ITEM_DROP -> breakEvent.setDropItems(false);
+      case NONE_DROP -> breakEvent.setDropItems(false);
     }
   }
 
@@ -386,10 +383,10 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * @param player     　コマンドを実行したプレイヤー
    * @return　　　　　　　　追加されるスコア
    */
-  private Integer getAddScore(PlayerData playerData, String dropItem, Player player) {
+  private Integer getAddScore(PlayerData playerData, DropItem dropItem, Player player) {
     int addScore = 0;
 
-    if (dropItem.equals(NONE_ITEM_DROP)) {
+    if (dropItem == DropItem.NONE_DROP) {
       messageOnFound(dropItem, player, addScore);
       return null;
     }
@@ -399,7 +396,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
              : (nowTime >= 20) ? 50
                                : 10;
 
-    if (dropItem.equals(GOLDEN_APPLE_ITEM_DROP)) {
+    if (dropItem == DropItem.GOLDEN_APPLE_DROP) {
       addScore += BONUS_SCORE;
     }
 
@@ -415,13 +412,13 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * @param player   コマンドを実行したプレイヤー
    * @param addScore 　追加されたスコア
    */
-  private void messageOnFound(String dropItem, Player player, int addScore) {
+  private void messageOnFound(DropItem dropItem, Player player, int addScore) {
     switch (dropItem) {
-      case GOLDEN_APPLE_ITEM_DROP -> player.sendMessage(
+      case GOLDEN_APPLE_DROP -> player.sendMessage(
           "金のりんごを見つけた！（＋" + addScore + "点）　りんごは残り" + getAppleCount() + "個！");
-      case APPLE_ITEM_DROP -> player.sendMessage(
+      case APPLE_DROP -> player.sendMessage(
           "りんごを見つけた！（＋" + addScore + "点）　　　りんごは残り" + getAppleCount() + "個！");
-      default -> player.sendMessage(
+      case NONE_DROP -> player.sendMessage(
           "ざんねん！はずれ！");
     }
   }
@@ -435,8 +432,8 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   private long getAppleCount() {
     return potIDMap.entrySet().stream()
         .filter(
-            entry -> entry.getValue().equals(GOLDEN_APPLE_ITEM_DROP)
-                || entry.getValue().equals(APPLE_ITEM_DROP))
+            entry -> entry.getValue().equals(DropItem.GOLDEN_APPLE_DROP)
+                || entry.getValue().equals(DropItem.APPLE_DROP))
         .count();
   }
 
