@@ -189,7 +189,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
 
       block.setType(Material.DECORATED_POT);
 
-      DropItem itemDrop = idItemDrop(i);
+      DropItem itemDrop = getDropItemById(i);
       potIDMap.put(block, itemDrop);
     }
   }
@@ -236,7 +236,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * @param id 出現した飾り壺のID
    * @return ドロップアイテムの種類
    */
-  private DropItem idItemDrop(int id) {
+  private DropItem getDropItemById(int id) {
     if (id == 1) {
       return DropItem.GOLDEN_APPLE_DROP;
     } else if (id >= 2 && id <= 2 + APPLE_AMOUNT - 1) {
