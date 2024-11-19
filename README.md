@@ -1,11 +1,7 @@
 # TreasureHunt - Minecraft Plugin
 
 ## 使用技術一覧
-<img alt="Static Badge" src="https://img.shields.io/badge/Java-v17-brightgreen?style=for-the-badge&labelColor=007396&color=4F4F4F">
-<img alt="Static Badge" src="https://img.shields.io/badge/mysql-v8.0.37-brightgreen?style=for-the-badge&logo=mysql&logoColor=white&logoSize=auto&labelColor=%234479A1&color=4F4F4F">
-<img alt="Static Badge" src="https://img.shields.io/badge/MyBatis-v3.5.16-brightgreen?style=for-the-badge&logoColor=white&logoSize=auto&labelColor=D74C4C&color=4F4F4F">
-<img alt="Static Badge" src="https://img.shields.io/badge/spigotmc-v1.20.4-brightgreen?style=for-the-badge&logo=spigotmc&logoColor=white&logoSize=auto&labelColor=ED8106&color=333333">
-<img alt="Static Badge" src="https://img.shields.io/badge/Minecraft-v1.20.4-brightgreen?style=for-the-badge&labelColor=55A630&color=593E1A">
+<img alt="Static Badge" src="https://img.shields.io/badge/Java-v17-brightgreen?style=for-the-badge&labelColor=007396&color=4F4F4F"> <img alt="Static Badge" src="https://img.shields.io/badge/mysql-v8.0.37-brightgreen?style=for-the-badge&logo=mysql&logoColor=white&logoSize=auto&labelColor=%234479A1&color=4F4F4F"> <img alt="Static Badge" src="https://img.shields.io/badge/MyBatis-v3.5.16-brightgreen?style=for-the-badge&logoColor=white&logoSize=auto&labelColor=D74C4C&color=4F4F4F"> <img alt="Static Badge" src="https://img.shields.io/badge/spigotmc-v1.20.4-brightgreen?style=for-the-badge&logo=spigotmc&logoColor=white&logoSize=auto&labelColor=ED8106&color=333333"> <img alt="Static Badge" src="https://img.shields.io/badge/Minecraft-v1.20.4-brightgreen?style=for-the-badge&labelColor=55A630&color=593E1A">
 
 
 ## 概要
