@@ -60,15 +60,15 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
   // カウントダウン中のフラグ
   private boolean isCountdownActive = false;
 
-  private final TreasureHunt treasurehunt;
+  private final TreasureHunt treasureHunt;
   private final PlayerScoreData playerScoreData = new PlayerScoreData();
 
   private final List<PlayerData> playerDataList = new ArrayList<>();
   private final Map<Block, DropItem> potIDMap = new HashMap<>();
 
 
-  public FindGoldenAppleCommand(TreasureHunt treasurehunt) {
-    this.treasurehunt = treasurehunt;
+  public FindGoldenAppleCommand(TreasureHunt treasureHunt) {
+    this.treasureHunt = treasureHunt;
   }
 
   @Override
@@ -151,7 +151,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * @param nowPlayer 　 現在実行しているプレイヤー情報
    */
   private void startCountdown(Player player, PlayerData nowPlayer) {
-    Bukkit.getScheduler().runTaskTimer(treasurehunt, Runnable -> {
+    Bukkit.getScheduler().runTaskTimer(treasureHunt, Runnable -> {
       if (COUNTDOWN_TIME > 0) {
         player.sendTitle(
             "ゲーム開始まで" + COUNTDOWN_TIME-- + " 秒",
@@ -267,7 +267,7 @@ public class FindGoldenAppleCommand extends BaseCommand implements Listener {
    * @param nowPlayerData 　 現在実行しているプレイヤー情報
    */
   private void runGameTimer(Player player, PlayerData nowPlayerData) {
-    Bukkit.getScheduler().runTaskTimer(treasurehunt, gameTask -> {
+    Bukkit.getScheduler().runTaskTimer(treasureHunt, gameTask -> {
       if (nowPlayerData.getGameTime() <= 0) {
         gameTask.cancel();
 
