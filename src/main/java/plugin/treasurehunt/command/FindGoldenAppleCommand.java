@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.SplittableRandom;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -32,6 +33,9 @@ import plugin.treasurehunt.PlayerScoreData;
 import plugin.treasurehunt.TreasureHunt;
 import plugin.treasurehunt.data.PlayerData;
 import plugin.treasurehunt.mapper.data.PlayerScore;
+import plugin.treasurehunt.task.CountdownTask;
+
+import static plugin.treasurehunt.constants.FindGoldenAppleConstants.*;
 
 /**
  * 制限時間内にランダムに出現した飾り壺を割り、金のりんご、りんごを見つけてスコアを獲得するゲームを起動するコマンドです。
@@ -39,451 +43,157 @@ import plugin.treasurehunt.mapper.data.PlayerScore;
  */
 
 public class FindGoldenAppleCommand extends BaseCommand implements Listener {
+    // カウントダウン中のフラグ
+    private boolean isCountdownActive = false;
 
-  // 設定の変更をしやすくするために定数にしています
-  public static final int POT_AMOUNT = 15;
-  public static final int APPLE_AMOUNT = 2;
+    private final TreasureHunt treasureHunt;
+    private PlayerScoreData playerScoreData = new PlayerScoreData();
 
-  // TIMEの単位は秒
-  public static final int GAME_TIME = 60;
-  public static int COUNTDOWN_TIME = 5;
+    private final List<PlayerData> playerDataList = new ArrayList<>();
 
-  public static final String LIST = "list";
-
-  // 金のりんごを発見したときのボーナススコア
-  public static final int BONUS_SCORE = 50;
-
-  private BossBar bossBar;
-  private ScoreboardManager scoreboardManager;
-  private Scoreboard scoreboard;
-
-  // カウントダウン中のフラグ
-  private boolean isCountdownActive = false;
-
-  private final TreasureHunt treasureHunt;
-  private final PlayerScoreData playerScoreData = new PlayerScoreData();
-
-  private final List<PlayerData> playerDataList = new ArrayList<>();
-  private final Map<Block, DropItem> potIDMap = new HashMap<>();
-
-
-  public FindGoldenAppleCommand(TreasureHunt treasureHunt) {
-    this.treasureHunt = treasureHunt;
-  }
-
-  @Override
-  public boolean onExecutePlayerCommand(Player player, Command command, String label,
-      String[] args) {
-    // 最初の引数が「list」だったらスコアを一覧表示して処理を終了する
-    if (args.length == 1 && LIST.equals(args[0])) {
-      sendPlayerScoreRank(player);
-      return false;
+    public FindGoldenAppleCommand(TreasureHunt treasurehunt, PlayerScoreData playerScoreData) {
+        this.treasureHunt = treasurehunt;
+        this.playerScoreData = playerScoreData;
     }
 
-    PlayerData nowPlayerData = getPlayerData(player);
+    @Override
+    protected boolean onExecutePlayerCommand(Player player, Command command, String label,
+                                          String[] args) {
+        // 最初の引数が「list」だったらスコアを一覧表示して処理を終了する
+        if (args.length == 1 && LIST.equals(args[0])) {
+            sendPlayerScoreRank(player);
+            return false;
+        }
 
-    player.sendMessage(
-        "ヒント: 金のりんごは +" + BONUS_SCORE + "点！");
-    player.sendMessage(
-        "ヒント: 見つける時間が早いほどスコアは高くなります！");
+        PlayerData nowPlayerData = getPlayerData(player);
 
-    isCountdownActive = true;
-    startCountdown(player, nowPlayerData);
-
-    return true;
-  }
-
-
-  @Override
-  public boolean onExecuteNPCCommand(CommandSender sender, Command command, String label,
-      String[] args) {
-    return false;
-  }
+        player.sendMessage(
+                "ヒント: 金のりんごは +" + BONUS_SCORE + "点！");
+        player.sendMessage(
+                "ヒント: 見つける時間が早いほどスコアは高くなります！");
 
 
-  @EventHandler
-  public void onPlayerMove(PlayerMoveEvent e) {
-    if (isCountdownActive) {
-      Player player = e.getPlayer();
-      Location from = e.getFrom();
-      Location to = e.getTo();
-
-      // 実際に移動が発生しようとした場合、位置を元に戻す
-      if (to == null || (from.getX() == to.getX() && from.getZ() == to.getZ())) {
-        return;
-      }
-      player.teleport(from);
-    }
-  }
-
-
-  /**
-   * 現在登録されているスコアの一覧をメッセージに送る。
-   *
-   * @param player 　プレイヤー
-   */
-  private void sendPlayerScoreRank(Player player) {
-    List<PlayerScore> playerScoreList = playerScoreData.selectList();
-
-    player.sendMessage("======== 🏆 現在のランキング Top 5 🏆 ========");
-    player.sendMessage("順位 | プレイヤー名 | スコア | 登録日時");
-
-    int rank = 1;
-    for (PlayerScore playerScore : playerScoreList) {
-      player.sendMessage(
-          String.format("%2d位 | %-10s | %5d | %s",
-              rank++,
-              playerScore.getPlayerName(),
-              playerScore.getScore(),
-              playerScore.getRegisteredAt()
-                  .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-          )
-      );
-    }
-    player.sendMessage("=======================================");
-  }
-
-
-  /**
-   * ゲーム開始前にルール説明をする。ルール説明時間は5秒間でカウントダウンする。
-   *
-   * @param player    　コマンドを実行したプレイヤー
-   * @param nowPlayer 　 現在実行しているプレイヤー情報
-   */
-  private void startCountdown(Player player, PlayerData nowPlayer) {
-    Bukkit.getScheduler().runTaskTimer(treasureHunt, Runnable -> {
-      if (COUNTDOWN_TIME > 0) {
-        player.sendTitle(
-            "ゲーム開始まで" + COUNTDOWN_TIME-- + " 秒",
-            "ルール: 飾り壺を割って りんごを見つけよう！",
-            0, 20, 0);
-
-      } else {
-        Runnable.cancel();
-
-        isCountdownActive = false;
-        COUNTDOWN_TIME += 5;
-
-        potIDMap.clear();
-        getPlayerData(player).setScore(0);
-
-        player.sendTitle("START", "", 0, 30, 10);
-
-        setUpPots(player);
-        timeLeftOnBossBar(player);
-
-        runGameTimer(player, nowPlayer);
-      }
-    }, 0, 20);
-  }
-
-
-  /**
-   * 飾り壺を出現させ、出現した飾り壺をドロップアイテムの種類と併せてMap登録する。
-   *
-   * @param player コマンドを実行したプレイヤー
-   */
-  private void setUpPots(Player player) {
-    for (int i = 1; i <= POT_AMOUNT; i++) {
-      Block block = findEmptyLocation(player);
-
-      block.setType(Material.DECORATED_POT);
-
-      DropItem itemDrop = getDropItemById(i);
-      potIDMap.put(block, itemDrop);
-    }
-  }
-
-
-  /**
-   * 空いている位置を見つけるための再帰メソッド
-   *
-   * @param player コマンドを実行したプレイヤー
-   * @return 空いているブロック位置
-   */
-  private Block findEmptyLocation(Player player) {
-    Block block = getDecoratedPotLocation(player).getBlock();
-
-    if (block.getType() != Material.AIR) {
-      return findEmptyLocation(player);
-    }
-    return block;
-  }
-
-
-  /**
-   * 飾り壺の出現場所を取得します。 出現エリアのX軸とZ軸は自分の位置からプラスランダムで-5〜4の値が設定されます。 Y軸はプレイヤーと同じ位置になります。
-   *
-   * @param player コマンドを実行したプレイヤー
-   * @return　　 　 飾り壺の出現場所
-   */
-  private Location getDecoratedPotLocation(Player player) {
-    Location playerlocation = player.getLocation();
-    int randomX = new SplittableRandom().nextInt(30) - 15;
-    int randomZ = new SplittableRandom().nextInt(30) - 15;
-
-    double x = playerlocation.getX() + randomX;
-    double y = playerlocation.getY();
-    double z = playerlocation.getZ() + randomZ;
-
-    return new Location(player.getWorld(), x, y, z);
-  }
-
-
-  /**
-   * IDに基づいて、金のりんご、りんご、ドロップなしを決定する。金のりんごは1個。りんごは2個。IDが振り分けられる。
-   *
-   * @param id 出現した飾り壺のID
-   * @return ドロップアイテムの種類
-   */
-  private DropItem getDropItemById(int id) {
-    if (id == 1) {
-      return DropItem.GOLDEN_APPLE_DROP;
-    } else if (id >= 2 && id <= 2 + APPLE_AMOUNT - 1) {
-      return DropItem.APPLE_DROP;
-    } else {
-      return DropItem.NONE_DROP;
-    }
-  }
-
-
-  /**
-   * ボスバーでゲームの残り時間を表示する。
-   *
-   * @param player 　コマンドを実行したプレイヤー
-   */
-  private void timeLeftOnBossBar(Player player) {
-    bossBar = Bukkit.createBossBar("残り時間: " + GAME_TIME + "秒", BarColor.BLUE, BarStyle.SOLID);
-    bossBar.setProgress(1.0); // ボスバーの進行度を100%に設定
-    bossBar.addPlayer(player);
-  }
-
-
-
-  /**
-   * ゲームタイマーの処理
-   *
-   * @param player        　コマンドを実行したプレイヤー
-   * @param nowPlayerData 　 現在実行しているプレイヤー情報
-   */
-  private void runGameTimer(Player player, PlayerData nowPlayerData) {
-    Bukkit.getScheduler().runTaskTimer(treasureHunt, gameTask -> {
-      if (nowPlayerData.getGameTime() <= 0) {
-        gameTask.cancel();
-
-        player.sendTitle("FINISH", "TOTAL SCORE：" + nowPlayerData.getScore(), 0, 60, 10);
-
-        // 空のスコアボードを設定して、ゲーム中のスコアボードを非表示にする
-        player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
-
-        bossBar.removeAll();
-        potIDMap.keySet().forEach(block -> block.setType(Material.AIR));
-
-        playerScoreData.insert(
-            new PlayerScore(nowPlayerData.getPlayerName()
-                , nowPlayerData.getScore()));
-
-        return;
-      }
-
-      bossBar.setTitle("残り時間: " + nowPlayerData.getGameTime() + "秒");
-      bossBar.setProgress((double) nowPlayerData.getGameTime() / GAME_TIME);
-
-      displayTotalScoreOnBoard(player, nowPlayerData);
-
-      nowPlayerData.setGameTime(nowPlayerData.getGameTime() - 1);
-    }, 0, 20);
-  }
-
-
-  /**
-   * ゲーム中に現在のトータルスコアをスコアボードに表示する
-   *
-   * @param player    　コマンドを実行したプレイヤー
-   * @param nowPlayer 　現在実行しているプレイヤー情報
-   */
-  private void displayTotalScoreOnBoard(Player player, PlayerData nowPlayer) {
-    scoreboardManager = Bukkit.getScoreboardManager();
-    scoreboard = scoreboardManager.getNewScoreboard();
-
-    Objective objective = scoreboard.registerNewObjective(
-        "GameStats",
-        Criteria.DUMMY,
-        "SCORE NOW"
-    );
-    objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-    player.setScoreboard(scoreboard);
-
-    Score score = objective.getScore("");
-    score.setScore(nowPlayer.getScore());
-  }
-
-
-  @EventHandler
-  public void onPotBreak(BlockBreakEvent breakEvent) {
-    Block block = breakEvent.getBlock();
-    Player player = breakEvent.getPlayer();
-
-    if (Objects.isNull(player) || playerDataList.isEmpty()) {
-      return;
+        new CountdownTask(treasureHunt, player, nowPlayerData).start(isCountdownActive);
+        return true;
     }
 
-    potIDMap.entrySet().stream()
-        .filter(entry -> entry.getKey().equals(block)
-            && entry.getKey().getType() == Material.DECORATED_POT)
-        .findFirst()
-        .ifPresent(entry -> {
+    @Override
+    protected boolean onExecuteNPCCommand(CommandSender sender, Command command, String label,
+                                       String[] args) {
+        return false;
+    }
 
-          DropItem dropItem = potIDMap.get(block);
-          dropItemOnPotBreak(breakEvent, dropItem, block);
+    //TODO: 以下のメソッドは、PlayerHandlerなどのクラスに移動することを検討してください。
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent e) {
+        if (isCountdownActive) {
+            Player player = e.getPlayer();
+            Location from = e.getFrom();
+            Location to = e.getTo();
 
-          if ("NONE_ITEM_DROP".equals(dropItem)) {
-            return;
-          }
-
-          playerDataList.forEach(playerData -> {
-            Integer addScore = getAddScore(playerData, dropItem, player);
-            if (addScore == null) {
-              return;
+            // 実際に移動が発生しようとした場合、位置を元に戻す
+            if (to == null || (from.getX() == to.getX() && from.getZ() == to.getZ())) {
+                return;
             }
-            potIDMap.remove(block);
-            finishGameIfApplesGone(player);
-            messageOnFound(dropItem, player, addScore);
-
-          });
-
-          breakEvent.setDropItems(false);
-        });
-  }
-
-
-  /**
-   * 飾り壺が壊されたときに、指定されたアイテムをドロップ。またはドロップを無効化します。
-   *
-   * @param breakEvent 飾り壺を壊したときのイベント
-   * @param dropItem   飾り壺を壊した後のドロップアイテム
-   * @param block      ゲーム開始時に出現した飾り壺
-   */
-  private static void dropItemOnPotBreak(BlockBreakEvent breakEvent, DropItem dropItem, Block block) {
-    switch (dropItem) {
-      case GOLDEN_APPLE_DROP -> block.getWorld()
-          .dropItemNaturally(block.getLocation(), new ItemStack(Material.GOLDEN_APPLE));
-      case APPLE_DROP -> block.getWorld()
-          .dropItemNaturally(block.getLocation(), new ItemStack(Material.APPLE));
-      case NONE_DROP -> breakEvent.setDropItems(false);
+            player.teleport(from);
+        }
     }
-  }
+    //TODO: 以下のメソッドは、PlayerHandlerなどのクラスに移動することを検討してください。
+    @EventHandler
+    public void onPotBreak(BlockBreakEvent breakEvent) {
+        Block block = breakEvent.getBlock();
+        Player player = breakEvent.getPlayer();
 
+        if (Objects.isNull(player) || playerDataList.isEmpty()) {
+            return;
+        }
 
-  /**
-   * 指定されたアイテムのドロップと残り時間に基づいて、プレイヤーに追加されるスコアを計算する。
-   *
-   * @param playerData 　プレイヤー情報
-   * @param dropItem   　ドロップアイテムの種類
-   * @param player     　コマンドを実行したプレイヤー
-   * @return　　　　　　　　追加されるスコア
-   */
-  private Integer getAddScore(PlayerData playerData, DropItem dropItem, Player player) {
-    int addScore = 0;
+        potIDMap.entrySet().stream()
+                .filter(entry -> entry.getKey().equals(block)
+                        && entry.getKey().getType() == Material.DECORATED_POT)
+                .findFirst()
+                .ifPresent(entry -> {
 
-    if (dropItem == DropItem.NONE_DROP) {
-      messageOnFound(dropItem, player, addScore);
-      return null;
+                    DropItem dropItem = potIDMap.get(block);
+                    dropItemOnPotBreak(breakEvent, dropItem, block);
+
+                    if ("NONE_ITEM_DROP".equals(dropItem)) {
+                        return;
+                    }
+
+                    playerDataList.forEach(playerData -> {
+                        Integer addScore = getAddScore(playerData, dropItem, player);
+                        if (addScore == null) {
+                            return;
+                        }
+                        potIDMap.remove(block);
+                        finishGameIfApplesGone(player);
+                        messageOnFound(dropItem, player, addScore);
+
+                    });
+
+                    breakEvent.setDropItems(false);
+                });
     }
 
-    int nowTime = playerData.getGameTime();
-    addScore = (nowTime >= 40) ? 100
-             : (nowTime >= 20) ? 50
-                               : 10;
+    /**
+     * 現在登録されているスコアの一覧をメッセージに送る。
+     *
+     * @param player 　プレイヤー
+     */
+    private void sendPlayerScoreRank(Player player) {
+        List<PlayerScore> playerScoreList = playerScoreData.selectList();
 
-    if (dropItem == DropItem.GOLDEN_APPLE_DROP) {
-      addScore += BONUS_SCORE;
+        player.sendMessage("======== 🏆 現在のランキング Top 5 🏆 ========");
+        player.sendMessage("順位 | プレイヤー名 | スコア | 登録日時");
+
+        int rank = 1;
+        for (PlayerScore playerScore : playerScoreList) {
+            player.sendMessage(
+                    String.format("%2d位 | %-10s | %5d | %s",
+                            rank++,
+                            playerScore.getPlayerName(),
+                            playerScore.getScore(),
+                            playerScore.getRegisteredAt()
+                                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                    )
+            );
+        }
+        player.sendMessage("=======================================");
     }
 
-    playerData.setScore(playerData.getScore() + addScore);
-    return addScore;
-  }
+    /**
+     * 現在実行しているプレイヤーのスコア情報を取得する
+     *
+     * @param player 　コマンドを実行したプレイヤー
+     * @return　現在実行しているプレイヤーのスコア情報
+     */
+    private PlayerData getPlayerData(Player player) {
+        PlayerData playerData = new PlayerData(player.getName());
 
+        if (playerDataList.isEmpty()) {
+            playerData = addNewPlayer(player);
+        } else {
+            playerData = playerDataList.stream()
+                    .findFirst()
+                    .map(pd -> pd.getPlayerName().equals(player.getName())
+                            ? pd
+                            : addNewPlayer(player)).orElse(playerData);
+        }
 
-  /**
-   * 飾り壺を壊してドロップアイテムが判明後、ドロップアイテムの結果とプレイヤーに追加されたスコアを送る
-   *
-   * @param dropItem 飾り壺を壊した後のドロップアイテム
-   * @param player   コマンドを実行したプレイヤー
-   * @param addScore 　追加されたスコア
-   */
-  private void messageOnFound(DropItem dropItem, Player player, int addScore) {
-    switch (dropItem) {
-      case GOLDEN_APPLE_DROP -> player.sendMessage(
-          "金のりんごを見つけた！（＋" + addScore + "点）　りんごは残り" + getAppleCount() + "個！");
-      case APPLE_DROP -> player.sendMessage(
-          "りんごを見つけた！（＋" + addScore + "点）　　　りんごは残り" + getAppleCount() + "個！");
-      case NONE_DROP -> player.sendMessage(
-          "ざんねん！はずれ！");
-    }
-  }
-
-
-  /**
-   * 獲得できるりんごが残り何個あるかをカウントする
-   *
-   * @return　残りのりんごの数
-   */
-  private long getAppleCount() {
-    return potIDMap.entrySet().stream()
-        .filter(
-            entry -> entry.getValue().equals(DropItem.GOLDEN_APPLE_DROP)
-                || entry.getValue().equals(DropItem.APPLE_DROP))
-        .count();
-  }
-
-
-  /**
-   * りんごが0個になった場合、ゲームタイムを0にしてゲームを終了する
-   *
-   * @param player コマンドを実行したプレイヤー
-   */
-  private void finishGameIfApplesGone(Player player) {
-    long count = getAppleCount();
-    if (count == 0) {
-      getPlayerData(player).setGameTime(0);
-    }
-  }
-
-
-  /**
-   * 現在実行しているプレイヤーのスコア情報を取得する
-   *
-   * @param player 　コマンドを実行したプレイヤー
-   * @return　現在実行しているプレイヤーのスコア情報
-   */
-  private PlayerData getPlayerData(Player player) {
-    PlayerData playerData = new PlayerData(player.getName());
-
-    if (playerDataList.isEmpty()) {
-      playerData = addNewPlayer(player);
-    } else {
-      playerData = playerDataList.stream()
-          .findFirst()
-          .map(pd -> pd.getPlayerName().equals(player.getName())
-              ? pd
-              : addNewPlayer(player)).orElse(playerData);
+        playerData.setGameTime(GAME_TIME);
+        return playerData;
     }
 
-    playerData.setGameTime(GAME_TIME);
-    return playerData;
-  }
-
-
-  /**
-   * 新規のプレイヤー情報をリストに追加する
-   *
-   * @param player コマンドを実行したプレイヤー
-   * @return　新規プレイヤー
-   */
-  private PlayerData addNewPlayer(Player player) {
-    PlayerData newPlayer = new PlayerData(player.getName());
-    playerDataList.add(newPlayer);
-    return newPlayer;
-  }
+    /**
+     * 新規のプレイヤー情報をリストに追加する
+     *
+     * @param player コマンドを実行したプレイヤー
+     * @return　新規プレイヤー
+     */
+    private PlayerData addNewPlayer(Player player) {
+        PlayerData newPlayer = new PlayerData(player.getName());
+        playerDataList.add(newPlayer);
+        return newPlayer;
+    }
 }
