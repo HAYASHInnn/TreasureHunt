@@ -1,4 +1,10 @@
-# TreasureHunt - Minecraft Plugin
+## はじめに
+本リポジトリはJava学習中の「まか」が作成したMinecraftのプラグイン『TreasureHunt（宝探しミニゲーム）』に関するものです。
+
+
+## コンセプト
+- スクール課題のお題で「宝探し」と言われたときに頭に思い浮かんだ、某勇者が民家で壺を割ってアイテムを入手するゲーム、ド◯クエをモチーフにしております。
+- これまで学習してきたことを活かし、ミニゲーム開発という成果物を作ることで、アウトプットや学習のモチベーションアップに繋げたいと思い作成しました。
 
 ## 使用技術一覧
 <img alt="Static Badge" src="https://img.shields.io/badge/Java-v17-brightgreen?style=for-the-badge&labelColor=007396&color=4F4F4F"> <img alt="Static Badge" src="https://img.shields.io/badge/mysql-v8.0.37-brightgreen?style=for-the-badge&logo=mysql&logoColor=white&logoSize=auto&labelColor=%234479A1&color=4F4F4F"> <img alt="Static Badge" src="https://img.shields.io/badge/MyBatis-v3.5.16-brightgreen?style=for-the-badge&logoColor=white&logoSize=auto&labelColor=D74C4C&color=4F4F4F"> <img alt="Static Badge" src="https://img.shields.io/badge/spigotmc-v1.20.4-brightgreen?style=for-the-badge&logo=spigotmc&logoColor=white&logoSize=auto&labelColor=ED8106&color=333333"> <img alt="Static Badge" src="https://img.shields.io/badge/Minecraft-v1.20.4-brightgreen?style=for-the-badge&labelColor=55A630&color=593E1A">
@@ -52,10 +58,12 @@
 ## 導入方法
 
 1. **プラグインのインストール**
-   - `FindGoldenAppleCommand.java` を含む `.jar` ファイルを作成し、Minecraftサーバーの `plugins` フォルダーに配置します。
+   - `FindGoldenAppleCommand.java` を含む `gradle shadowJar` ファイルを作成し、Minecraftサーバーの `plugins` フォルダーに配置します。
    
 2. **サーバーの起動**
    - サーバーを再起動してプラグインが正常に読み込まれるか確認します。
+
+
 
 > [!IMPORTANT]
 > **MySQL データベースの設定手順**
@@ -103,13 +111,18 @@
 :bulb:  設定は`FindGoldenAppleCommand`クラス内で調整可能です。
 
 
-
 ## 注意事項
+- サーバーバージョン
+   - 本プラグインはBukkitまたはSpigot APIの特定バージョン向けに開発されています。互換性のあるサーバーバージョンを使用してください。
+- プラグインの依存関係
+   - 一部のBukkit APIの機能が必要です。プラグインが正しく動作するため、必要なAPIがサポートされていることを確認してください。
 
-**◾️ サーバーバージョン**
+## 今後 実装予定の機能
+- Dockerを導入
+   - 1つのコマンド操作でユーザーがDBを用意できるようにする
+- コマンド実行時に設定値を変更できるようにする
 
-本プラグインはBukkitまたはSpigot APIの特定バージョン向けに開発されています。互換性のあるサーバーバージョンを使用してください。
+## おわりに
+- 感想・コメント等ございましたら、Xアカウントまでご連絡いただけますと幸いです。
 
-**◾️ プラグインの依存関係**
-
-一部のBukkit APIの機能が必要です。プラグインが正しく動作するため、必要なAPIがサポートされていることを確認してください。
+<img src="https://github.com/user-attachments/assets/5df37342-c70e-4e0d-b9cd-21e390c9069c" style="width: 15px; height: auto; margin-top: 30px;" alt="Example SVG"> <sup>：https://x.com/makaJava368748</sup>
