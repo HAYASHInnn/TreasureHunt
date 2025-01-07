@@ -7,7 +7,7 @@
 - これまで学習してきたことを活かし、ミニゲーム開発という成果物を作ることで、アウトプットや学習のモチベーションアップに繋げたいと思い作成しました。
 
 ## 使用技術一覧
-<img alt="Static Badge" src="https://img.shields.io/badge/Java-v17-brightgreen?style=for-the-badge&labelColor=007396&color=4F4F4F"> <img alt="Static Badge" src="https://img.shields.io/badge/mysql-v8.0.37-brightgreen?style=for-the-badge&logo=mysql&logoColor=white&logoSize=auto&labelColor=%234479A1&color=4F4F4F"> <img alt="Static Badge" src="https://img.shields.io/badge/MyBatis-v3.5.16-brightgreen?style=for-the-badge&logoColor=white&logoSize=auto&labelColor=D74C4C&color=4F4F4F"> <img alt="Static Badge" src="https://img.shields.io/badge/spigotmc-v1.20.4-brightgreen?style=for-the-badge&logo=spigotmc&logoColor=white&logoSize=auto&labelColor=ED8106&color=333333"> <img alt="Static Badge" src="https://img.shields.io/badge/Minecraft-v1.20.4-brightgreen?style=for-the-badge&labelColor=55A630&color=593E1A">
+<img alt="Static Badge" src="https://img.shields.io/badge/Java-v17-brightgreen?style=for-the-badge&labelColor=007396&color=4F4F4F"> <img alt="Static Badge" src="https://img.shields.io/badge/mysql-v8.0.37-brightgreen?style=for-the-badge&logo=mysql&logoColor=white&logoSize=auto&labelColor=%234479A1&color=4F4F4F"> <img alt="Static Badge" src="https://img.shields.io/badge/MyBatis-v3.5.16-brightgreen?style=for-the-badge&logoColor=white&logoSize=auto&labelColor=D74C4C&color=4F4F4F"> <img alt="Static Badge" src="https://img.shields.io/badge/spigotmc-v1.20.4-brightgreen?style=for-the-badge&logo=spigotmc&logoColor=white&logoSize=auto&labelColor=ED8106&color=333333"> <img alt="Static Badge" src="https://img.shields.io/badge/Minecraft-v1.20.4-brightgreen?style=for-the-badge&labelColor=55A630&color=593E1A"> <img alt="Static Badge" src="https://img.shields.io/badge/Docker-latest-brightgreen?style=for-the-badge&logo=docker&logoColor=white&labelColor=2496ED&color=4F4F4F">
 
 
 ## 概要
@@ -57,47 +57,68 @@
 
 ## 導入方法
 
-1. **プラグインのインストール**
-   - `FindGoldenAppleCommand.java` を含む `gradle shadowJar` ファイルを作成し、Minecraftサーバーの `plugins` フォルダーに配置します。
-   
-2. **サーバーの起動**
-   - サーバーを再起動してプラグインが正常に読み込まれるか確認します。
+1. **開発環境の準備**
+    - Docker Desktopをインストール
+    - プロジェクトをクローン
 
+2. **データベースの準備**
+   ```bash
+   # プロジェクトのルートディレクトリで実行
+   docker-compose up -d
+   ```
+> [!IMPORTANT]
+> Docker関連ファイルの構成
+> ```
+> TreasureHunt/
+> ├── docker-compose.yml
+> └── docker/
+>     └── mysql/
+>         └── init/
+>             └── 01_create_table.sql
+> ```
 
+3. **プラグインのインストール**
+    - `FindGoldenAppleCommand.java` を含む `gradle shadowJar` ファイルを作成し、Minecraftサーバーの `plugins` フォルダーに配置します。
+
+4. **サーバーの起動**
+    - サーバーを起動してプラグインが正常に読み込まれるか確認します。
 
 > [!IMPORTANT]
-> **MySQL データベースの設定手順**
+> **Docker環境でのMySQL設定**
 >
-> このプラグインには、MySQLデータベースが必要です。
+> プロジェクトには以下のファイルが含まれています。
 >
-> 以下の手順に従って、ローカル環境にデータベースとテーブルを作成してください。
+> 1. `docker-compose.yml`: MySQLコンテナの設定
+> 2. `docker/mysql/init/01_create_table.sql`: テーブル初期化用SQL
 >
-> 1. MySQLにログインする
+> Docker Composeを使用することで、以下の設定が自動的に行われます。
+> - データベース `treasure_hunt_db` の作成
+> - `player_score` テーブルの作成
+> - 必要な権限の設定
+>
+> :bulb: デフォルトの接続情報：
 > ```
-> mysql -u root -p
-> ``` 
-> 2. データベースの作成
-> ```
-> CREATE DATABASE treasurehunt;
-> ```
-> ```
-> USE treasurehunt;
-> ```
-> 3. テーブルの作成
-> ```
-> CREATE TABLE player_score (
->   id INT NOT NULL AUTO_INCREMENT,
->   player_name VARCHAR(100),
->   score INT,
->   registered_at DATETIME,
->   PRIMARY KEY (id)
-> );
-> ```
-> :bulb:プロジェクトの`src/main/resources/mybatis-config.xml`を開き、下記***をご自身のMySQLの設定に変更してください。
-> ```
-> <property name="username" value="****"/>
-> <property name="password" value="******"/>
-> ```
+> ホスト: localhost
+> ポート: 3307
+> データベース: treasure_hunt_db
+> ユーザー: root
+> パスワード: rootroot
+
+> [!NOTE]
+> これらの接続情報は自動的に設定されるため、ローカルのMySQLの設定に関係なく、この設定で動作します。
+
+
+## データベース構成
+
+テーブル: `player_score`
+
+| カラム名 | 型 | 説明 |
+|-|-|-|
+| id | INT | 主キー、自動採番 |
+| player_name | VARCHAR(100) | プレイヤー名 |
+| score | INT | スコア |
+| registered_at | DATETIME | 登録日時 |
+
 
 ## 設定
 
@@ -118,8 +139,7 @@
    - 一部のBukkit APIの機能が必要です。プラグインが正しく動作するため、必要なAPIがサポートされていることを確認してください。
 
 ## 今後 実装予定の機能
-- Dockerを導入
-   - 1つのコマンド操作でユーザーがDBを用意できるようにする
+- 環境変数ファイルを作成する
 - コマンド実行時に設定値を変更できるようにする
 
 ## おわりに
