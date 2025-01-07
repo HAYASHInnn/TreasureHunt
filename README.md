@@ -58,8 +58,8 @@
 ## 導入方法
 
 **1.開発環境の準備**
-    - Docker Desktopをインストール
-    - プロジェクトをクローン
+   - Docker Desktopをインストール
+   - プロジェクトをクローン
 
 **2.データベースの準備**
    ```bash
@@ -78,10 +78,12 @@
 > ```
 
 **3.プラグインのインストール**
-    - `FindGoldenAppleCommand.java` を含む `gradle shadowJar` ファイルを作成し、Minecraftサーバーの `plugins` フォルダーに配置します。
+
+`FindGoldenAppleCommand.java` を含む `gradle shadowJar` ファイルを作成し、Minecraftサーバーの `plugins` フォルダーに配置します。
 
 **4.サーバーの起動**
-    - サーバーを起動してプラグインが正常に読み込まれるか確認します。
+
+サーバーを起動してプラグインが正常に読み込まれるか確認します。
 
 > [!IMPORTANT]
 > **Docker環境でのMySQL設定**
