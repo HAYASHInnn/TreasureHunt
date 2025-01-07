@@ -57,11 +57,11 @@
 
 ## 導入方法
 
-1. **開発環境の準備**
+**1.開発環境の準備**
     - Docker Desktopをインストール
     - プロジェクトをクローン
 
-2. **データベースの準備**
+**2.データベースの準備**
    ```bash
    # プロジェクトのルートディレクトリで実行
    docker-compose up -d
@@ -77,20 +77,15 @@
 >             └── 01_create_table.sql
 > ```
 
-3. **プラグインのインストール**
+**3.プラグインのインストール**
     - `FindGoldenAppleCommand.java` を含む `gradle shadowJar` ファイルを作成し、Minecraftサーバーの `plugins` フォルダーに配置します。
 
-4. **サーバーの起動**
+**4.サーバーの起動**
     - サーバーを起動してプラグインが正常に読み込まれるか確認します。
 
 > [!IMPORTANT]
 > **Docker環境でのMySQL設定**
->
-> プロジェクトには以下のファイルが含まれています。
->
-> 1. `docker-compose.yml`: MySQLコンテナの設定
-> 2. `docker/mysql/init/01_create_table.sql`: テーブル初期化用SQL
->
+> 
 > Docker Composeを使用することで、以下の設定が自動的に行われます。
 > - データベース `treasure_hunt_db` の作成
 > - `player_score` テーブルの作成
