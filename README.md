@@ -57,7 +57,7 @@
 
 ## 導入方法
 
-**1. 開発環境の準備**
+**1. 環境の準備**
    - Docker Desktopをインストール
    - プロジェクトをクローン
 
@@ -66,20 +66,9 @@
    # プロジェクトのルートディレクトリで実行
    docker-compose up -d
    ```
-> [!IMPORTANT]
-> Docker関連ファイルの構成
-> ```
-> TreasureHunt/
-> ├── docker-compose.yml
-> └── docker/
->     └── mysql/
->         └── init/
->             └── 01_create_table.sql
-> ```
-
 **3. プラグインのインストール**
 
-`FindGoldenAppleCommand.java` を含む `gradle shadowJar` ファイルを作成し、Minecraftサーバーの `plugins` フォルダーに配置します。
+`gradle shadowJar` ファイルを作成し、Minecraftサーバーの `plugins` フォルダーに配置します。
 
 **4. サーバーの起動**
 
